@@ -5,24 +5,29 @@ import { EffortDonut } from "@/components/charts/EffortDonut";
 import { ScenarioCompare } from "@/components/domain/ScenarioCompare";
 import { Icon } from "@/components/layout/Icon";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { fmtDec, fmtHoras, fmtInt, diasParaAnos } from "@/lib/format";
-import { useCatalog, useParams, useScenarios } from "@/lib/hooks";
+import { fmtDec, fmtHoras, fmtInt, fmtPct, diasParaAnos } from "@/lib/format";
+import { useCatalog, useMigrate, useMigrateGain, useParams, useScenarios } from "@/lib/hooks";
 import { useSim } from "@/lib/store";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useState } from "react";
 
 export default function OverviewPage() {
   const params = useParams();
   const cenario = useSim((s) => s.cenario);
+  const gain = useMigrateGain();
   const { data: scn, isLoading: lScn } = useScenarios(params);
   const { data: cat, isLoading: lCat } = useCatalog();
+  const { data: mig } = useMigrate(params, gain);
   const [metric, setMetric] = useState<"n_sas" | "soma_horas">("n_sas");
 
   const active = scn?.[cenario];
+  const migActive = mig?.[cenario];
   const economia = scn ? scn.bruto.esforco_total - scn.sem_dup.esforco_total : 0;
 
   return (
@@ -139,6 +144,53 @@ export default function OverviewPage() {
         </div>
       )}
 
+      {/* Aceleração com Migrate (MigrateMind) */}
+      {migActive && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <Card className="relative overflow-hidden p-6">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-success/20 blur-3xl" />
+            <div className="relative flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-grad-accent shadow-glow">
+                  <Icon name="MagicStar" size={22} color="#fff" variant="Bold" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-ink">Aceleração com Migrate</p>
+                    <Badge tone="success">−{fmtPct(migActive.ganho_pct, 1)}</Badge>
+                  </div>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    migração assistida (MigrateMind) — ganho de tempo por complexidade
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-1 flex-wrap items-center gap-6">
+                <MigStat
+                  label="Esforço"
+                  value={`${fmtHoras(migActive.manual.esforco_total)} → ${fmtHoras(migActive.migrate.esforco_total)}`}
+                />
+                <MigStat label="Economia" value={`−${fmtHoras(migActive.economia_horas)}`} success />
+                <MigStat
+                  label="Sprints"
+                  value={`${fmtInt(migActive.manual.n_sprints)} → ${fmtInt(migActive.migrate.n_sprints)}`}
+                />
+              </div>
+
+              <Link href="/migrate" className="ml-auto">
+                <Button variant="ghost">
+                  Tempo de Desenvolvimento <Icon name="ArrowRight" size={16} />
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Comparação + composição */}
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <div>
@@ -201,6 +253,29 @@ export default function OverviewPage() {
           )}
         </Card>
       </div>
+    </div>
+  );
+}
+
+function MigStat({
+  label,
+  value,
+  success,
+}: {
+  label: string;
+  value: string;
+  success?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-wide text-ink-faint">{label}</p>
+      <p
+        className={`num mt-0.5 text-sm font-bold ${
+          success ? "text-success" : "text-ink"
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }

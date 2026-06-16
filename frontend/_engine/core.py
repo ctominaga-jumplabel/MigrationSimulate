@@ -26,6 +26,20 @@ import pandas as pd
 # Ordem canônica das categorias (do mais simples ao mais complexo).
 CATEGORIA_ORDER = ["Trivial", "Simples", "Médio", "Complexo", "Muito Complexo"]
 
+# Ganho padrão da ferramenta Migrate (MigrateMind) por categoria de complexidade:
+# % de REDUÇÃO do esforço de CONVERSÃO de código .sas (NÃO do overhead de Job).
+# Calibragem de partida a partir de testes de campo — código trivial/simples chega
+# a >90% de ganho (a conversão é quase toda automática); código muito complexo
+# exige mais revisão/reparo manual, logo ganho menor. Ajustável na app (tela de
+# calibração). Consumido por `compute_migrate`; a API expõe estes defaults.
+MIGRATE_GAIN_DEFAULT = {
+    "Trivial": 92.0,
+    "Simples": 85.0,
+    "Médio": 65.0,
+    "Complexo": 45.0,
+    "Muito Complexo": 30.0,
+}
+
 DATASET_PATH = "data/dataset.parquet"
 ROLLUP_PATH = "data/egp_rollup.parquet"
 
@@ -287,6 +301,23 @@ def _cenario_dict(
     params: dict,
 ) -> dict:
     """Monta o dict de saída de um cenário a partir dos componentes."""
+    return {
+        **_effort_metrics(horas_sas, horas_job, params),
+        "n_egps": int(n_egps),
+        "n_orfaos": int(n_orfaos),
+        "itens": itens,
+    }
+
+
+def _effort_metrics(horas_sas: float, horas_job: float, params: dict) -> dict:
+    """Métricas escalares de esforço/duração a partir de horas .sas + Job.
+
+    Núcleo do cálculo de um cenário, SEM contagens nem fila (`itens`): esforço
+    base (sas + job), esforço total (×K), duração (dias úteis e horas por
+    consultor) e nº de sprints. Reutilizado por `_cenario_dict` (cenários Bruto /
+    Sem-dup) e por `compute_migrate` (cenário com a ferramenta Migrate), para que
+    o ganho do Migrate use EXATAMENTE a mesma fórmula de duração/sprints.
+    """
     K = float(params["K"])
     esforco_base = horas_sas + horas_job  # antes de K (sas + job)
     esforco_total = esforco_base * K
@@ -316,9 +347,6 @@ def _cenario_dict(
         "duracao_horas": float(duracao_horas),
         "duracao_dias_uteis": float(duracao_dias_uteis),
         "n_sprints": int(n_sprints),
-        "n_egps": int(n_egps),
-        "n_orfaos": int(n_orfaos),
-        "itens": itens,
     }
 
 
@@ -413,6 +441,153 @@ def compute_scenarios(
     )
 
     return {"bruto": bruto, "sem_dup": sem_dup}
+
+
+# ---------------------------------------------------------------------------
+# CENÁRIO COM A FERRAMENTA MIGRATE (MigrateMind).
+# ---------------------------------------------------------------------------
+def categoria_breakdown(
+    dataset_df: pd.DataFrame, rollup_df: pd.DataFrame, cenario: str
+) -> pd.DataFrame:
+    """Horas de CONVERSÃO .sas por categoria de complexidade, para um cenário.
+
+    Decompõe o `horas_sas` do cenário (o componente de conversão de código, que
+    inclui os órfãos) por `categoria`, de forma RECONCILIÁVEL com
+    `compute_scenarios`:
+
+        - "bruto": todos os `.sas` (Σ horas_estimadas == horas_sas Bruto).
+        - "sem_dup": os `.sas` que sobrevivem ao colapso por família —
+          não-duplicatas dentro dos EGPs canônicos + órfãos não-duplicatas
+          (Σ == horas_sas Sem-dup, antes de K).
+
+    Colunas: categoria, n_sas, horas_sas — ordenadas por CATEGORIA_ORDER. Pura.
+    O overhead de Job NÃO entra aqui (o ganho do Migrate não o reduz).
+    """
+    if cenario == "sem_dup":
+        canon = set(canonical_rollup(rollup_df)["egp_name"].tolist())
+        nao_dup = ~dataset_df["is_likely_duplicate"]
+        em_canonico = dataset_df["egp_name"].isin(canon) & nao_dup
+        orfao_nao_dup = (dataset_df["is_orphan"] == True) & nao_dup  # noqa: E712
+        df = dataset_df[em_canonico | orfao_nao_dup]
+    elif cenario == "bruto":
+        df = dataset_df
+    else:
+        raise ValueError(f"cenário inválido: {cenario!r}")
+
+    agg = (
+        df.groupby("categoria", dropna=False)
+        .agg(n_sas=("file_name", "size"), horas_sas=("horas_estimadas", "sum"))
+        .reset_index()
+    )
+    agg["categoria"] = pd.Categorical(
+        agg["categoria"], categories=CATEGORIA_ORDER, ordered=True
+    )
+    agg = agg.sort_values("categoria").reset_index(drop=True)
+    agg["horas_sas"] = agg["horas_sas"].astype(float)
+    agg["n_sas"] = agg["n_sas"].astype(int)
+    return agg
+
+
+def _merge_gain(gain_map: dict | None) -> dict:
+    """Mescla o ganho informado sobre os defaults (categorias ausentes → default)."""
+    merged = dict(MIGRATE_GAIN_DEFAULT)
+    if gain_map:
+        for cat, pct in gain_map.items():
+            if pct is not None:
+                # Clampa em [0, 100]: ganho é % de redução do esforço de conversão.
+                merged[cat] = max(0.0, min(100.0, float(pct)))
+    return merged
+
+
+def compute_migrate(
+    dataset_df: pd.DataFrame,
+    rollup_df: pd.DataFrame,
+    params: dict,
+    gain_map: dict | None = None,
+) -> dict:
+    """Esforço/tempo de desenvolvimento COM a ferramenta Migrate (MigrateMind).
+
+    O ganho do Migrate é uma % de REDUÇÃO do esforço de CONVERSÃO de código
+    `.sas`, aplicada POR CATEGORIA de complexidade (`gain_map`, defaults em
+    `MIGRATE_GAIN_DEFAULT`). O overhead de Job (orquestração no Databricks) NÃO é
+    reduzido — o Migrate automatiza a conversão do código, não a montagem de
+    Jobs. As demais alavancas (K, nº de consultores, horas/dia) valem igual, então
+    duração e nº de sprints saem da MESMA fórmula (`_effort_metrics`) — só muda o
+    `horas_sas`, agora reduzido.
+
+    Retorna `{"bruto": {...}, "sem_dup": {...}}`. Cada cenário tem:
+        - manual: KPIs SEM Migrate (espelham `compute_scenarios`, sem a fila).
+        - migrate: KPIs COM Migrate (horas_sas reduzido por categoria).
+        - economia_horas / ganho_pct: redução do esforço TOTAL (×K) manual→Migrate.
+        - n_egps, n_orfaos: contexto do cenário (iguais ao manual).
+        - por_categoria: lista de dicts {categoria, n_sas, horas_manual,
+          horas_migrate, ganho_pct, economia_horas} — o ganho efetivo POR
+          complexidade, base da tela de calibração.
+
+    `gain_map` (opcional): {categoria: pct_reducao 0..100}. Mesclado sobre os
+    defaults; valores fora de [0,100] são clampados. Pura, sem Streamlit.
+    """
+    gain = _merge_gain(gain_map)
+    scen = compute_scenarios(dataset_df, rollup_df, params)
+    out: dict = {}
+
+    for cenario in ("bruto", "sem_dup"):
+        manual = scen[cenario]
+        horas_job = float(manual["horas_job"])
+        K = float(params["K"])
+
+        bd = categoria_breakdown(dataset_df, rollup_df, cenario)
+        por_categoria = []
+        horas_sas_migrate = 0.0
+        for _, r in bd.iterrows():
+            cat = r["categoria"]
+            g = float(gain.get(cat, 0.0))
+            h_manual = float(r["horas_sas"])
+            h_migrate = h_manual * (1.0 - g / 100.0)
+            horas_sas_migrate += h_migrate
+            por_categoria.append(
+                {
+                    "categoria": cat,
+                    "n_sas": int(r["n_sas"]),
+                    "ganho_pct": g,
+                    "horas_manual": h_manual,
+                    "horas_migrate": h_migrate,
+                    "economia_horas": h_manual - h_migrate,
+                }
+            )
+
+        migrate_kpis = _effort_metrics(horas_sas_migrate, horas_job, params)
+        manual_kpis = {
+            k: manual[k]
+            for k in (
+                "horas_sas",
+                "horas_job",
+                "esforco_base",
+                "K",
+                "esforco_total",
+                "duracao_horas",
+                "duracao_dias_uteis",
+                "n_sprints",
+            )
+        }
+        economia = manual_kpis["esforco_total"] - migrate_kpis["esforco_total"]
+        ganho_pct = (
+            economia / manual_kpis["esforco_total"] * 100.0
+            if manual_kpis["esforco_total"] > 0
+            else 0.0
+        )
+
+        out[cenario] = {
+            "manual": manual_kpis,
+            "migrate": migrate_kpis,
+            "economia_horas": float(economia),
+            "ganho_pct": float(ganho_pct),
+            "n_egps": int(manual["n_egps"]),
+            "n_orfaos": int(manual["n_orfaos"]),
+            "por_categoria": por_categoria,
+        }
+
+    return out
 
 
 # ---------------------------------------------------------------------------

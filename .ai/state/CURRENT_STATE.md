@@ -50,7 +50,19 @@ streamlit run app.py
 | Sem-dup (família) | 133.661 h | 4.455 | 446 |
 - Reconciliados via API (idênticos à v1). Σ horas_estimadas = 179.741,70 h.
 
-## Deploy — TUDO no Vercel (configurado, não publicado)
+## Deploy — NO AR na Vercel ✅
+- **Produção:** https://migration-simulate.vercel.app (projeto `migration-simulate`,
+  scope `christominaga87-9174s-projects`). Validado em produção: `/api/health` ok
+  e `/api/scenarios` reconcilia (Bruto 311.532 h/1.039 sprints; Sem-dup 133.661 h).
+- Deploy feito via **Vercel CLI** a partir de `frontend/` (`vercel --prod`). GitHub
+  privado já recebeu o código (commits 53e8a9b + 8c7bc1c).
+- **Pendente (1 passo manual do usuário):** conectar o repo GitHub privado ao
+  projeto Vercel (Settings → Git) — exige autorizar o app GitHub da Vercel no
+  navegador (OAuth) — E definir **Root Directory = `frontend`** para os builds por
+  push. Enquanto isso, redeploys são via `vercel --prod --yes --scope ...`.
+- Correção aplicada: Next.js 15.1.6 → **15.5.19** (a Vercel bloqueia versões com CVE).
+
+## Deploy — config técnica (TUDO no Vercel)
 - API FastAPI vira função serverless `frontend/api/index.py` (same-origin `/api/*`
   via `frontend/vercel.json`). Motor vendorizado em `frontend/_engine/` (gerado por
   `frontend/scripts/build_engine.py`: copia core/models/serializers + parquet→CSV

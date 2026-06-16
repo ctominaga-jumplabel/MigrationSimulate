@@ -4,17 +4,30 @@ import { cn } from "@/lib/cn";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 import { Icon } from "./Icon";
 import { NAV } from "./nav";
 
 const GROUPS: { key: string; label: string }[] = [
   { key: "principal", label: "Comando" },
+  { key: "migrate", label: "Migrate · MigrateMind" },
   { key: "planejamento", label: "Planejamento" },
   { key: "saída", label: "Saída" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+
+  // Href ativo = item de MAIOR prefixo que casa com a rota (exato ou com "/").
+  // Necessário porque "/migrate" é prefixo de "/migrate/config".
+  const activeHref = useMemo(() => {
+    const matches = NAV.filter((n) =>
+      n.href === "/"
+        ? pathname === "/"
+        : pathname === n.href || pathname.startsWith(n.href + "/")
+    );
+    return matches.sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  }, [pathname]);
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-line bg-base-900/70 backdrop-blur-xl lg:flex">
@@ -38,10 +51,7 @@ export function Sidebar() {
             </p>
             <div className="space-y-1">
               {NAV.filter((n) => n.group === group.key).map((item) => {
-                const active =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
+                const active = item.href === activeHref;
                 return (
                   <Link
                     key={item.href}

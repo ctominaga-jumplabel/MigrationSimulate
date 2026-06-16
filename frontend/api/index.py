@@ -30,8 +30,8 @@ if _ENGINE not in sys.path:
     sys.path.insert(0, _ENGINE)
 
 import core  # noqa: E402  (vendorizado)
-from models import EgpChildrenRequest, Params  # noqa: E402
-from serializers import clean_dict, df_to_records  # noqa: E402
+from models import EgpChildrenRequest, MigrateRequest, Params  # noqa: E402
+from serializers import clean_dict, deep_clean, df_to_records  # noqa: E402
 
 _DATA = os.path.join(_ENGINE, "data")
 
@@ -98,7 +98,16 @@ def catalog() -> dict:
         },
         "categoria_distribution": df_to_records(dist),
         "categoria_order": core.CATEGORIA_ORDER,
+        "migrate_gain_default": core.MIGRATE_GAIN_DEFAULT,
     }
+
+
+@api_app.post("/api/migrate")
+def migrate(req: MigrateRequest) -> dict:
+    result = core.compute_migrate(
+        DATASET_DF, ROLLUP_DF, req.core_params(), gain_map=req.core_gain()
+    )
+    return deep_clean({"bruto": result["bruto"], "sem_dup": result["sem_dup"]})
 
 
 @api_app.post("/api/scenarios")

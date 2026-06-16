@@ -2,6 +2,7 @@
 import type {
   CatalogResponse,
   EgpsResponse,
+  MigrateResponse,
   OrphansResponse,
   Params,
   SasChild,
@@ -32,6 +33,8 @@ async function get<T>(path: string): Promise<T> {
 export const api = {
   catalog: () => get<CatalogResponse>("/api/catalog"),
   scenarios: (p: Params) => post<ScenariosResponse>("/api/scenarios", p),
+  migrate: (p: Params, migrate_gain: Record<string, number>) =>
+    post<MigrateResponse>("/api/migrate", { ...p, migrate_gain }),
   egps: (p: Params) => post<EgpsResponse>("/api/egps", p),
   egpChildren: (egp_name: string) =>
     post<{ egp_name: string; children: SasChild[] }>("/api/egps/children", {

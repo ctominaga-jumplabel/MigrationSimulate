@@ -61,5 +61,21 @@ class Params(BaseModel):
         return {self.cenario: flat}
 
 
+class MigrateRequest(Params):
+    """Alavancas + ganho do Migrate por categoria (para `core.compute_migrate`).
+
+    `migrate_gain` é um mapa {categoria: % de redução do esforço de conversão
+    .sas (0..100)}. Categorias ausentes herdam `core.MIGRATE_GAIN_DEFAULT`; o
+    `core` clampa em [0,100]. Herda todas as alavancas de `Params` (K, consultores
+    etc.), que valem igual no cenário com Migrate.
+    """
+
+    migrate_gain: dict[str, float] = Field(default_factory=dict)
+
+    def core_gain(self) -> dict:
+        """Mapa de ganho no formato que `core.compute_migrate` consome."""
+        return {str(k): float(v) for k, v in self.migrate_gain.items()}
+
+
 class EgpChildrenRequest(BaseModel):
     egp_name: str

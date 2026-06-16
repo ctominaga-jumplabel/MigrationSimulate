@@ -373,3 +373,68 @@ def test_pack_sprints_capacidade_zero_concorda(dataset_df, rollup_df):
         assert sc[cen]["n_sprints"] == 0
         assert len(packed["resumo_sprints"]) == 0
         assert len(packed["resumo_sprints"]) == sc[cen]["n_sprints"]
+
+
+# ---------------------------------------------------------------------------
+# MIGRATE (MigrateMind) — ganho por complexidade.
+# ---------------------------------------------------------------------------
+def test_categoria_breakdown_reconcilia_horas_sas(dataset_df, rollup_df):
+    """(24) Σ horas por categoria == horas_sas do cenário (Bruto e Sem-dup)."""
+    sc = core.compute_scenarios(dataset_df, rollup_df, _params())
+    for cen in ("bruto", "sem_dup"):
+        bd = core.categoria_breakdown(dataset_df, rollup_df, cen)
+        assert float(bd["horas_sas"].sum()) == pytest.approx(
+            sc[cen]["horas_sas"], abs=1.0
+        )
+        # Ordenação canônica das categorias presentes.
+        cats = [c for c in bd["categoria"].tolist() if c is not None]
+        assert cats == [c for c in core.CATEGORIA_ORDER if c in cats]
+
+
+def test_compute_migrate_ganho_zero_igual_manual(dataset_df, rollup_df):
+    """(25) Ganho 0% em todas as categorias → migrate == manual (esforço/sprints)."""
+    zero = {c: 0.0 for c in core.CATEGORIA_ORDER}
+    mg = core.compute_migrate(dataset_df, rollup_df, _params(), gain_map=zero)
+    for cen in ("bruto", "sem_dup"):
+        m, g = mg[cen]["manual"], mg[cen]["migrate"]
+        assert g["esforco_total"] == pytest.approx(m["esforco_total"], abs=1e-6)
+        assert g["n_sprints"] == m["n_sprints"]
+        assert mg[cen]["economia_horas"] == pytest.approx(0.0, abs=1e-6)
+        assert mg[cen]["ganho_pct"] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_compute_migrate_ganho_total_zera_conversao(dataset_df, rollup_df):
+    """(26) Ganho 100% → horas .sas viram ~0; sobra só o overhead de Job (×K)."""
+    full = {c: 100.0 for c in core.CATEGORIA_ORDER}
+    mg = core.compute_migrate(dataset_df, rollup_df, _params(), gain_map=full)
+    for cen in ("bruto", "sem_dup"):
+        g = mg[cen]["migrate"]
+        assert g["horas_sas"] == pytest.approx(0.0, abs=1.0)
+        # Esforço restante = horas_job × K (conversão zerada).
+        assert g["esforco_total"] == pytest.approx(g["horas_job"] * g["K"], abs=1.0)
+
+
+def test_compute_migrate_job_inalterado_e_monotonia(dataset_df, rollup_df):
+    """(27) Migrate não mexe no overhead de Job; mais ganho ⇒ menos esforço."""
+    mg = core.compute_migrate(dataset_df, rollup_df, _params())  # defaults
+    for cen in ("bruto", "sem_dup"):
+        m, g = mg[cen]["manual"], mg[cen]["migrate"]
+        assert g["horas_job"] == pytest.approx(m["horas_job"], abs=1e-6)
+        assert g["esforco_total"] <= m["esforco_total"] + 1e-6
+        assert g["n_sprints"] <= m["n_sprints"]
+        assert 0.0 <= mg[cen]["ganho_pct"] <= 100.0
+        # Breakdown por categoria coerente: economia = manual − migrate por linha.
+        for row in mg[cen]["por_categoria"]:
+            assert row["economia_horas"] == pytest.approx(
+                row["horas_manual"] - row["horas_migrate"], abs=1e-6
+            )
+
+
+def test_compute_migrate_clampa_ganho_fora_de_faixa(dataset_df, rollup_df):
+    """(28) Ganho >100 é clampado a 100 (e <0 a 0): não estoura a conversão."""
+    mg = core.compute_migrate(
+        dataset_df, rollup_df, _params(), gain_map={"Trivial": 150.0}
+    )
+    triviais = [r for r in mg["bruto"]["por_categoria"] if r["categoria"] == "Trivial"]
+    assert triviais and triviais[0]["ganho_pct"] == 100.0
+    assert triviais[0]["horas_migrate"] == pytest.approx(0.0, abs=1e-6)

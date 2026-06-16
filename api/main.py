@@ -20,8 +20,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 import core
-from api.models import EgpChildrenRequest, Params
-from api.serializers import clean_dict, df_to_records
+from api.models import EgpChildrenRequest, MigrateRequest, Params
+from api.serializers import clean_dict, deep_clean, df_to_records
 
 app = FastAPI(
     title="Cogna Migration Mission Control API",
@@ -90,7 +90,22 @@ def catalog() -> dict:
         },
         "categoria_distribution": df_to_records(dist),
         "categoria_order": core.CATEGORIA_ORDER,
+        "migrate_gain_default": core.MIGRATE_GAIN_DEFAULT,
     }
+
+
+# ---------------------------------------------------------------------------
+# Migrate (MigrateMind): tempo de desenvolvimento COM a ferramenta. Reativo às
+# alavancas + ao ganho por categoria. Sem cálculo novo — embrulha
+# core.compute_migrate (que reaproveita compute_scenarios + _effort_metrics).
+# ---------------------------------------------------------------------------
+@app.post("/api/migrate")
+def migrate(req: MigrateRequest) -> dict:
+    dataset_df, rollup_df = _dfs()
+    result = core.compute_migrate(
+        dataset_df, rollup_df, req.core_params(), gain_map=req.core_gain()
+    )
+    return deep_clean({"bruto": result["bruto"], "sem_dup": result["sem_dup"]})
 
 
 # ---------------------------------------------------------------------------

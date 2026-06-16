@@ -15,13 +15,27 @@ interface SimState {
   cenario: Cenario;
   // Prioridades editadas por cenário (chave = `${tipo}:${nome}`).
   prioridades: Record<Cenario, Record<string, number>>;
+  // Ganho do Migrate por categoria de complexidade (% de redução da conversão).
+  migrate_gain: Record<string, number>;
 
   set: (patch: Partial<SimState>) => void;
   setCenario: (c: Cenario) => void;
   setPrioridade: (c: Cenario, tipo: "egp" | "orfao", nome: string, p: number) => void;
+  setMigrateGain: (categoria: string, pct: number) => void;
+  resetMigrateGain: () => void;
   reset: () => void;
   params: () => Params;
 }
+
+// Defaults espelham core.MIGRATE_GAIN_DEFAULT (a UI parte coerente mesmo antes
+// de o /api/catalog carregar; a tela de calibração permite sobrescrever).
+export const MIGRATE_GAIN_DEFAULTS: Record<string, number> = {
+  Trivial: 92,
+  Simples: 85,
+  Médio: 65,
+  Complexo: 45,
+  "Muito Complexo": 30,
+};
 
 const DEFAULTS = {
   n_consultores: 5,
@@ -36,6 +50,7 @@ const DEFAULTS = {
 export const useSim = create<SimState>((set, get) => ({
   ...DEFAULTS,
   prioridades: { bruto: {}, sem_dup: {} },
+  migrate_gain: { ...MIGRATE_GAIN_DEFAULTS },
 
   set: (patch) => set(patch),
   setCenario: (cenario) => set({ cenario }),
@@ -46,7 +61,20 @@ export const useSim = create<SimState>((set, get) => ({
         [c]: { ...s.prioridades[c], [`${tipo}:${nome}`]: p },
       },
     })),
-  reset: () => set({ ...DEFAULTS, prioridades: { bruto: {}, sem_dup: {} } }),
+  setMigrateGain: (categoria, pct) =>
+    set((s) => ({
+      migrate_gain: {
+        ...s.migrate_gain,
+        [categoria]: Math.max(0, Math.min(100, pct)),
+      },
+    })),
+  resetMigrateGain: () => set({ migrate_gain: { ...MIGRATE_GAIN_DEFAULTS } }),
+  reset: () =>
+    set({
+      ...DEFAULTS,
+      prioridades: { bruto: {}, sem_dup: {} },
+      migrate_gain: { ...MIGRATE_GAIN_DEFAULTS },
+    }),
 
   params: () => {
     const s = get();

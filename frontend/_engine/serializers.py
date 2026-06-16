@@ -53,3 +53,18 @@ def clean_dict(d: dict) -> dict:
         for k, v in d.items()
         if not isinstance(v, pd.DataFrame)
     }
+
+
+def deep_clean(obj):
+    """Sanitiza recursivamente dicts/listas aninhados (NaN/inf→None, date→ISO).
+
+    Para respostas com estrutura aninhada (ex.: `core.compute_migrate`, que tem
+    sub-dicts `manual`/`migrate` e a lista `por_categoria`), onde `clean_dict`
+    (raso) não chega. DataFrames são descartados (não devem aparecer aqui)."""
+    if isinstance(obj, pd.DataFrame):
+        return None
+    if isinstance(obj, dict):
+        return {k: deep_clean(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [deep_clean(v) for v in obj]
+    return safe(obj)

@@ -55,6 +55,19 @@ export function useScenarios(p: Params) {
   });
 }
 
+/** Ganho do Migrate por categoria (estável por valor) assinando o store. */
+export function useMigrateGain(): Record<string, number> {
+  return useSim((s) => s.migrate_gain);
+}
+
+export function useMigrate(p: Params, gain: Record<string, number>) {
+  return useQuery({
+    queryKey: ["migrate", key(p), JSON.stringify(gain)],
+    queryFn: () => api.migrate(p, gain),
+    placeholderData: (prev) => prev,
+  });
+}
+
 export function useEgps(p: Params) {
   return useQuery({
     queryKey: ["egps", p.cenario, p.J_base, p.J_task],

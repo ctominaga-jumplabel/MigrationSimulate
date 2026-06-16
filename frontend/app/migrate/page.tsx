@@ -28,7 +28,7 @@ export default function MigratePage() {
       <SectionHeader
         eyebrow="Migrate · MigrateMind"
         title="Tempo de Desenvolvimento"
-        description="Quanto a migração assistida pela ferramenta Migrate (MigrateMind) reduz o esforço de conversão SAS → PySpark. O ganho é aplicado por complexidade sobre as horas de conversão de código — o overhead de Job (orquestração) não muda."
+        description="Quanto a migração assistida pela ferramenta Migrate (MigrateMind) reduz o esforço SAS → PySpark. O ganho por complexidade incide sobre as horas de conversão de código e, como o Migrate também monta os Jobs no Databricks, sobre o overhead de Job — neste, ponderado pela complexidade dos .sas de cada EGP."
         actions={
           <div className="flex items-center gap-3">
             <SegmentedControl
@@ -95,7 +95,7 @@ export default function MigratePage() {
             accent="electric"
             icon={<Icon name="Flash" size={20} variant="Bold" />}
             sub={`manual: ${fmtHoras(active.manual.esforco_total)}`}
-            hint="Esforço total (conversão .sas reduzida pelo ganho + overhead de Job inalterado) × K. Vem de core.compute_migrate."
+            hint="Esforço total (conversão .sas + overhead de Job, ambos reduzidos pelo ganho) × K. Vem de core.compute_migrate."
           />
           <KpiCard
             label="Economia de esforço"
@@ -103,7 +103,7 @@ export default function MigratePage() {
             format={(v) => "−" + fmtHoras(v)}
             icon={<Icon name="TrendDown" size={20} variant="Bold" />}
             sub={`ganho de ${fmtPct(active.ganho_pct, 1)} sobre o total`}
-            hint="Diferença entre o esforço manual e o esforço com Migrate (sobre o esforço total, incluindo o overhead de Job que não é reduzido)."
+            hint="Diferença entre o esforço manual e o esforço com Migrate, sobre o esforço total (conversão + overhead de Job, ambos reduzidos pelo ganho)."
             delay={0.05}
           />
           <KpiCard

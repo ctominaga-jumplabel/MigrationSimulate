@@ -83,9 +83,12 @@ export default function MigrateConfigPage() {
             );
           })}
           <p className="rounded-xl border border-line bg-white/5 px-4 py-3 text-[11px] leading-relaxed text-ink-muted">
-            O ganho incide só sobre a <span className="font-semibold text-ink">conversão de código</span>.
-            O overhead de Job (orquestração no Databricks) é mantido — o Migrate
-            automatiza a tradução SAS → PySpark, não a montagem dos Jobs.
+            O ganho incide sobre a <span className="font-semibold text-ink">conversão de código</span> e
+            também sobre o <span className="font-semibold text-ink">overhead de Job</span> — o Migrate
+            traduz SAS → PySpark e <span className="font-semibold text-ink">monta os Jobs</span> no
+            Databricks. No Job, o ganho é ponderado pela complexidade dos .sas de
+            cada EGP (EGP de código simples tem o Job quase todo automatizado; de
+            código complexo, menos).
           </p>
         </Card>
 

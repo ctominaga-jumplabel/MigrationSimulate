@@ -27,7 +27,9 @@ import pandas as pd
 CATEGORIA_ORDER = ["Trivial", "Simples", "Médio", "Complexo", "Muito Complexo"]
 
 # Ganho padrão da ferramenta Migrate (MigrateMind) por categoria de complexidade:
-# % de REDUÇÃO do esforço de CONVERSÃO de código .sas (NÃO do overhead de Job).
+# % de REDUÇÃO do esforço de CONVERSÃO de código .sas. Como o Migrate também gera
+# os Jobs no Databricks, este mesmo ganho reduz o overhead de Job — porém de forma
+# PONDERADA pela complexidade dos .sas de cada EGP (ver `_job_overhead_migrate`).
 # Calibragem de partida a partir de testes de campo — código trivial/simples chega
 # a >90% de ganho (a conversão é quase toda automática); código muito complexo
 # exige mais revisão/reparo manual, logo ganho menor. Ajustável na app (tela de
@@ -461,7 +463,8 @@ def categoria_breakdown(
           (Σ == horas_sas Sem-dup, antes de K).
 
     Colunas: categoria, n_sas, horas_sas — ordenadas por CATEGORIA_ORDER. Pura.
-    O overhead de Job NÃO entra aqui (o ganho do Migrate não o reduz).
+    O overhead de Job NÃO entra aqui — ele é reduzido à parte, por EGP e ponderado
+    pela complexidade, em `_job_overhead_migrate`.
     """
     if cenario == "sem_dup":
         canon = set(canonical_rollup(rollup_df)["egp_name"].tolist())
@@ -499,6 +502,60 @@ def _merge_gain(gain_map: dict | None) -> dict:
     return merged
 
 
+def _job_overhead_migrate(
+    dataset_df: pd.DataFrame,
+    rollup_df: pd.DataFrame,
+    params: dict,
+    gain: dict,
+    cenario: str,
+) -> float:
+    """Overhead de Job TOTAL do cenário COM o ganho do Migrate.
+
+    O Migrate gera os Jobs no Databricks, então o ganho também reduz o overhead de
+    orquestração — mas de forma PONDERADA pela complexidade dos `.sas` de cada EGP
+    (um EGP só de código trivial tem o Job quase todo automatizado; um de código
+    muito complexo, bem menos). Por EGP:
+
+        g_egp = Σ_cat (n_sas_cat × ganho_cat) / n_sas_egp     (média ponderada)
+        job_migrate_egp = (J_base + J_task × n_sas_egp) × (1 − g_egp/100)
+
+    A ponderação é por CONTAGEM de `.sas` (o overhead J_task escala com `n_sas`),
+    sobre o MESMO conjunto de `.sas` que define `n_sas` do cenário em
+    `compute_scenarios` (todos no Bruto; só não-duplicatas de EGP canônico no
+    Sem-dup). Órfãos não têm Job e não entram. Retorna a soma sobre os EGPs. Pura.
+    """
+    # `n_sas` autoritativo por EGP — o MESMO usado no overhead de compute_scenarios.
+    if cenario == "sem_dup":
+        canon = canonical_rollup(rollup_df)
+        egp_n = canon[["egp_name", "n_sas_sem_dup"]].rename(
+            columns={"n_sas_sem_dup": "n_sas"}
+        )
+        canon_set = set(canon["egp_name"].tolist())
+        nao_dup = ~dataset_df["is_likely_duplicate"]
+        nao_orfao = dataset_df["is_orphan"] == False  # noqa: E712
+        df = dataset_df[dataset_df["egp_name"].isin(canon_set) & nao_dup & nao_orfao]
+    elif cenario == "bruto":
+        egp_n = rollup_df[["egp_name", "n_sas"]].copy()
+        df = dataset_df[dataset_df["is_orphan"] == False]  # noqa: E712
+    else:
+        raise ValueError(f"cenário inválido: {cenario!r}")
+
+    # Ganho ponderado por EGP: soma do ganho de cada .sas ÷ nº de .sas do EGP.
+    df = df.assign(_g=df["categoria"].map(lambda c: float(gain.get(c, 0.0))))
+    por_egp = (
+        df.groupby("egp_name", dropna=False)
+        .agg(soma_g=("_g", "sum"), n=("_g", "size"))
+        .reset_index()
+    )
+    por_egp["g_egp"] = por_egp["soma_g"] / por_egp["n"].where(por_egp["n"] > 0, 1)
+
+    merged = egp_n.merge(por_egp[["egp_name", "g_egp"]], on="egp_name", how="left")
+    merged["g_egp"] = merged["g_egp"].fillna(0.0)
+    job = job_overhead(merged["n_sas"].astype(float), params)
+    job_migrate = job * (1.0 - merged["g_egp"] / 100.0)
+    return float(job_migrate.sum())
+
+
 def compute_migrate(
     dataset_df: pd.DataFrame,
     rollup_df: pd.DataFrame,
@@ -509,11 +566,12 @@ def compute_migrate(
 
     O ganho do Migrate é uma % de REDUÇÃO do esforço de CONVERSÃO de código
     `.sas`, aplicada POR CATEGORIA de complexidade (`gain_map`, defaults em
-    `MIGRATE_GAIN_DEFAULT`). O overhead de Job (orquestração no Databricks) NÃO é
-    reduzido — o Migrate automatiza a conversão do código, não a montagem de
-    Jobs. As demais alavancas (K, nº de consultores, horas/dia) valem igual, então
-    duração e nº de sprints saem da MESMA fórmula (`_effort_metrics`) — só muda o
-    `horas_sas`, agora reduzido.
+    `MIGRATE_GAIN_DEFAULT`). Como o Migrate também GERA os Jobs no Databricks, o
+    mesmo ganho reduz o overhead de Job — mas ponderado pela complexidade dos
+    `.sas` de cada EGP (ver `_job_overhead_migrate`), não na proporção total. As
+    demais alavancas (K, nº de consultores, horas/dia) valem igual, então duração e
+    nº de sprints saem da MESMA fórmula (`_effort_metrics`) — mudam o `horas_sas` e
+    o `horas_job`, ambos agora reduzidos.
 
     Retorna `{"bruto": {...}, "sem_dup": {...}}`. Cada cenário tem:
         - manual: KPIs SEM Migrate (espelham `compute_scenarios`, sem a fila).
@@ -533,7 +591,10 @@ def compute_migrate(
 
     for cenario in ("bruto", "sem_dup"):
         manual = scen[cenario]
-        horas_job = float(manual["horas_job"])
+        # Overhead de Job COM Migrate: reduzido por EGP, ponderado por complexidade.
+        horas_job_migrate = _job_overhead_migrate(
+            dataset_df, rollup_df, params, gain, cenario
+        )
         K = float(params["K"])
 
         bd = categoria_breakdown(dataset_df, rollup_df, cenario)
@@ -556,7 +617,7 @@ def compute_migrate(
                 }
             )
 
-        migrate_kpis = _effort_metrics(horas_sas_migrate, horas_job, params)
+        migrate_kpis = _effort_metrics(horas_sas_migrate, horas_job_migrate, params)
         manual_kpis = {
             k: manual[k]
             for k in (

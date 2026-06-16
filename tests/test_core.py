@@ -403,23 +403,32 @@ def test_compute_migrate_ganho_zero_igual_manual(dataset_df, rollup_df):
         assert mg[cen]["ganho_pct"] == pytest.approx(0.0, abs=1e-9)
 
 
-def test_compute_migrate_ganho_total_zera_conversao(dataset_df, rollup_df):
-    """(26) Ganho 100% → horas .sas viram ~0; sobra só o overhead de Job (×K)."""
+def test_compute_migrate_ganho_total_zera_conversao_e_job(dataset_df, rollup_df):
+    """(26) Ganho 100% em TODAS as categorias → conversão zera e o overhead de Job
+    dos EGPs COM código também (ganho ponderado = 100%). Sobra apenas o resíduo de
+    Job de EGPs canônicos sem `.sas` sobreviventes (só J_base; sem código, o Migrate
+    não tem o que automatizar) — daí esforço total == horas_job × K."""
     full = {c: 100.0 for c in core.CATEGORIA_ORDER}
     mg = core.compute_migrate(dataset_df, rollup_df, _params(), gain_map=full)
     for cen in ("bruto", "sem_dup"):
-        g = mg[cen]["migrate"]
+        m, g = mg[cen]["manual"], mg[cen]["migrate"]
         assert g["horas_sas"] == pytest.approx(0.0, abs=1.0)
-        # Esforço restante = horas_job × K (conversão zerada).
+        assert g["horas_job"] < m["horas_job"]
+        # Conversão zerada → o que sobra do esforço é só o resíduo de Job (×K).
         assert g["esforco_total"] == pytest.approx(g["horas_job"] * g["K"], abs=1.0)
+    # No Bruto, todo EGP tem código → o overhead de Job zera por completo.
+    assert mg["bruto"]["migrate"]["horas_job"] == pytest.approx(0.0, abs=1.0)
 
 
-def test_compute_migrate_job_inalterado_e_monotonia(dataset_df, rollup_df):
-    """(27) Migrate não mexe no overhead de Job; mais ganho ⇒ menos esforço."""
+def test_compute_migrate_job_reduzido_e_monotonia(dataset_df, rollup_df):
+    """(27) Migrate também reduz o overhead de Job (gera os Jobs no Databricks),
+    ponderado por complexidade; mais ganho ⇒ menos esforço."""
     mg = core.compute_migrate(dataset_df, rollup_df, _params())  # defaults
     for cen in ("bruto", "sem_dup"):
         m, g = mg[cen]["manual"], mg[cen]["migrate"]
-        assert g["horas_job"] == pytest.approx(m["horas_job"], abs=1e-6)
+        # Job reduzido, porém não zerado (ganho ponderado < 100% no agregado).
+        assert g["horas_job"] < m["horas_job"]
+        assert g["horas_job"] > 0.0
         assert g["esforco_total"] <= m["esforco_total"] + 1e-6
         assert g["n_sprints"] <= m["n_sprints"]
         assert 0.0 <= mg[cen]["ganho_pct"] <= 100.0

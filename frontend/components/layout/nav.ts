@@ -6,6 +6,13 @@ export interface NavItem {
   group: "principal" | "migrate" | "planejamento" | "saída";
 }
 
+export const GROUPS: { key: NavItem["group"]; label: string }[] = [
+  { key: "principal", label: "Comando" },
+  { key: "migrate", label: "Migrate · MigrateMind" },
+  { key: "planejamento", label: "Planejamento" },
+  { key: "saída", label: "Saída" },
+];
+
 export const NAV: NavItem[] = [
   { href: "/", label: "Overview", icon: "Chart2", group: "principal" },
   { href: "/scenario", label: "Scenario Builder", icon: "Setting4", group: "principal" },

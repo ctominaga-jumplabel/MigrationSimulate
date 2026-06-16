@@ -6,14 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { Icon } from "./Icon";
-import { NAV } from "./nav";
-
-const GROUPS: { key: string; label: string }[] = [
-  { key: "principal", label: "Comando" },
-  { key: "migrate", label: "Migrate · MigrateMind" },
-  { key: "planejamento", label: "Planejamento" },
-  { key: "saída", label: "Saída" },
-];
+import { GROUPS, NAV } from "./nav";
 
 export function Sidebar() {
   const pathname = usePathname();

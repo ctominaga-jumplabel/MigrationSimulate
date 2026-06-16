@@ -105,7 +105,7 @@ export default function SprintsPage() {
               {limit < resumo.length && (
                 <button
                   onClick={() => setLimit((l) => l + 24)}
-                  className="mt-3 w-full rounded-xl border border-line bg-white/5 py-2.5 text-sm font-medium text-ink-muted hover:text-ink"
+                  className="mt-3 w-full rounded-xl border border-line bg-black/[0.03] py-2.5 text-sm font-medium text-ink-muted hover:text-ink"
                 >
                   Carregar mais ({fmtInt(resumo.length - limit)} restantes)
                 </button>
@@ -195,7 +195,7 @@ function SprintCard({
       <p className="mt-0.5 text-[11px] text-ink-faint">
         {fmtData(sp.data_inicio)} → {fmtData(sp.data_fim)}
       </p>
-      <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+      <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06]">
         <div
           className={`h-full rounded-full ${full ? "bg-grad-accent" : "bg-grad-electric"}`}
           style={{ width: `${Math.min(100, occ)}%` }}

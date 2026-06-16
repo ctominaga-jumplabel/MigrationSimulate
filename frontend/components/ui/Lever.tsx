@@ -38,7 +38,7 @@ export function LeverSlider({
             </Tooltip>
           )}
         </label>
-        <span className="num rounded-lg bg-white/5 px-2.5 py-0.5 text-sm font-bold text-accent-soft">
+        <span className="num rounded-lg bg-accent/10 px-2.5 py-0.5 text-sm font-bold text-accent-soft">
           {format ? format(value) : value}
           {unit ? ` ${unit}` : ""}
         </span>
@@ -52,7 +52,7 @@ export function LeverSlider({
         onChange={(e) => onChange(Number(e.target.value))}
         className="lever-range w-full"
         style={{
-          background: `linear-gradient(to right, #ff6a3d ${pct}%, rgba(255,255,255,0.08) ${pct}%)`,
+          background: `linear-gradient(to right, #8629ff ${pct}%, rgba(26,20,48,0.10) ${pct}%)`,
         }}
       />
     </div>
@@ -91,7 +91,7 @@ export function LeverSelect<T extends string | number>({
               "flex-1 rounded-xl border px-3 py-2 text-sm font-semibold transition-all",
               opt.value === value
                 ? "border-accent/40 bg-accent/15 text-accent-soft shadow-glow"
-                : "border-line bg-white/5 text-ink-muted hover:text-ink"
+                : "border-line bg-black/[0.03] text-ink-muted hover:text-ink"
             )}
           >
             {opt.label}
@@ -129,7 +129,7 @@ export function LeverNumber({
           </Tooltip>
         )}
       </label>
-      <div className="flex items-center rounded-xl border border-line bg-white/5">
+      <div className="flex items-center rounded-xl border border-line bg-black/[0.03]">
         <button
           onClick={() => onChange(Math.max(min, value - step))}
           className="px-3 py-2 text-ink-muted hover:text-ink"

@@ -12,7 +12,7 @@ export function SearchInput({
   placeholder?: string;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-line bg-white/5 px-3 py-2 focus-within:border-accent/40">
+    <div className="flex items-center gap-2 rounded-xl border border-line bg-black/[0.03] px-3 py-2 focus-within:border-accent/40">
       <Icon name="SearchNormal1" size={16} className="text-ink-faint" />
       <input
         value={value}

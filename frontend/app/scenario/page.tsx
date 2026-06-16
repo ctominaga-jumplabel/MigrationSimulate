@@ -124,7 +124,7 @@ export default function ScenarioPage() {
               type="date"
               value={s.data_inicio}
               onChange={(e) => s.set({ data_inicio: e.target.value })}
-              className="num w-full rounded-xl border border-line bg-white/5 px-3 py-2 text-sm text-ink outline-none focus:border-accent/40"
+              className="num w-full rounded-xl border border-line bg-black/[0.03] px-3 py-2 text-sm text-ink outline-none focus:border-accent/40"
             />
           </div>
         </Card>
@@ -172,7 +172,7 @@ export default function ScenarioPage() {
                 />
               </div>
 
-              <div className="mt-5 rounded-xl border border-line bg-white/5 px-4 py-3 text-xs text-ink-muted">
+              <div className="mt-5 rounded-xl border border-line bg-black/[0.03] px-4 py-3 text-xs text-ink-muted">
                 Capacidade por sprint ={" "}
                 <span className="num font-semibold text-ink">
                   {fmtHoras(s.n_consultores * s.horas_dia * 10)}

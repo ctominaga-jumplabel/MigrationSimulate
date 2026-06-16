@@ -38,7 +38,7 @@ export function CategoryChart({
         />
         <Tooltip
           contentStyle={tooltipStyle}
-          cursor={{ fill: "rgba(255,255,255,0.03)" }}
+          cursor={{ fill: "rgba(26,20,48,0.04)" }}
           formatter={(v: number) =>
             metric === "n_sas" ? [fmtInt(v), "Nº .sas"] : [fmtHoras(v), "Horas"]
           }

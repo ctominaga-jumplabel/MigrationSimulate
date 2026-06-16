@@ -8,8 +8,8 @@ type Variant = "primary" | "ghost" | "outline";
 const variants: Record<Variant, string> = {
   primary:
     "bg-grad-accent text-white shadow-glow hover:brightness-110 active:brightness-95",
-  ghost: "bg-white/5 text-ink hover:bg-white/10 border border-line",
-  outline: "bg-transparent text-ink border border-line hover:bg-white/5",
+  ghost: "bg-black/[0.04] text-ink hover:bg-black/[0.07] border border-line",
+  outline: "bg-transparent text-ink border border-line hover:bg-black/[0.04]",
 };
 
 export function Button({

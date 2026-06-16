@@ -4,6 +4,7 @@ import { cn } from "@/lib/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "./Icon";
@@ -52,7 +53,7 @@ export function MobileNav() {
         aria-label="Abrir menu"
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-white/5 text-ink-muted transition-colors hover:text-ink lg:hidden"
+        className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-black/[0.03] text-ink-muted transition-colors hover:text-ink lg:hidden"
       >
         <Icon name="HambergerMenu" size={20} />
       </button>
@@ -67,7 +68,7 @@ export function MobileNav() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-ink/30 backdrop-blur-sm"
             />
             <motion.aside
               initial={{ x: "-100%" }}
@@ -77,16 +78,18 @@ export function MobileNav() {
               className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-line bg-base-900/95 backdrop-blur-xl"
             >
               <div className="flex items-center justify-between px-5 py-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-grad-accent shadow-glow">
-                    <Icon name="Routing" size={20} color="#fff" variant="Bold" />
-                  </div>
-                  <div className="leading-tight">
-                    <p className="text-sm font-bold text-ink">Mission Control</p>
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">
-                      Cogna · SAS → Databricks
-                    </p>
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <Image
+                    src="/cogna-logo.png"
+                    alt="Cogna"
+                    width={628}
+                    height={230}
+                    priority
+                    className="h-7 w-auto"
+                  />
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">
+                    Mission Control · SAS → Databricks
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -114,8 +117,8 @@ export function MobileNav() {
                             className={cn(
                               "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                               active
-                                ? "border border-accent/30 bg-accent/10 text-white"
-                                : "text-ink-muted hover:bg-white/5 hover:text-ink"
+                                ? "border border-accent/30 bg-accent/10 text-accent-soft"
+                                : "text-ink-muted hover:bg-black/[0.04] hover:text-ink"
                             )}
                           >
                             <Icon

@@ -82,7 +82,7 @@ export default function MigrateConfigPage() {
               </div>
             );
           })}
-          <p className="rounded-xl border border-line bg-white/5 px-4 py-3 text-[11px] leading-relaxed text-ink-muted">
+          <p className="rounded-xl border border-line bg-black/[0.03] px-4 py-3 text-[11px] leading-relaxed text-ink-muted">
             O ganho incide sobre a <span className="font-semibold text-ink">conversão de código</span> e
             também sobre o <span className="font-semibold text-ink">overhead de Job</span> — o Migrate
             traduz SAS → PySpark e <span className="font-semibold text-ink">monta os Jobs</span> no

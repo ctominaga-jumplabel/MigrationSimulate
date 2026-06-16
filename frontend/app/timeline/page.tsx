@@ -76,7 +76,7 @@ export default function TimelinePage() {
                   <div className="w-44 shrink-0 truncate text-right text-xs text-ink-muted" title={it.nome}>
                     {it.nome}
                   </div>
-                  <div className="relative h-7 flex-1 overflow-hidden rounded-lg bg-white/[0.03]">
+                  <div className="relative h-7 flex-1 overflow-hidden rounded-lg bg-black/[0.05]">
                     <motion.div
                       initial={{ width: 0, opacity: 0 }}
                       animate={{ width: `${width}%`, opacity: 1 }}

@@ -74,7 +74,7 @@ export default function AnalyticsPage() {
                   width={52}
                   tickFormatter={(v) => new Intl.NumberFormat("pt-BR", { notation: "compact" }).format(v)}
                 />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(255,255,255,0.03)" }} formatter={(v: number) => fmtHoras(v)} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(26,20,48,0.04)" }} formatter={(v: number) => fmtHoras(v)} />
                 <Legend wrapperStyle={{ fontSize: 12, color: CHART.text }} />
                 <Bar dataKey="Bruto" fill={CHART.accent} radius={[6, 6, 0, 0]} maxBarSize={70} />
                 <Bar dataKey="Sem-dup" fill={CHART.electric} radius={[6, 6, 0, 0]} maxBarSize={70} />

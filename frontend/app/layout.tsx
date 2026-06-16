@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "Cogna Migration Mission Control",
   description:
     "Central executiva de simulação de esforço, duração e sprints para a migração SAS → Databricks.",
+  icons: { icon: "/cogna-logo.png" },
 };
 
 export default function RootLayout({

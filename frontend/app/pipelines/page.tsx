@@ -82,7 +82,7 @@ export default function PipelinesPage() {
         <select
           value={cat}
           onChange={(e) => setCat(e.target.value)}
-          className="rounded-xl border border-line bg-white/5 px-3 py-2 text-sm text-ink outline-none"
+          className="rounded-xl border border-line bg-black/[0.03] px-3 py-2 text-sm text-ink outline-none"
         >
           {cats.map((c) => (
             <option key={c} value={c} className="bg-base-800">
@@ -181,7 +181,7 @@ function EgpCard({
       </div>
 
       {/* barra esforço relativo */}
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06]">
         <div
           className="h-full rounded-full bg-grad-accent"
           style={{ width: `${maxHoras > 0 ? (egp.horas_total / maxHoras) * 100 : 0}%` }}
@@ -204,7 +204,7 @@ function EgpCard({
             min={1}
             value={priority}
             onChange={(e) => onPriority(Math.max(1, Number(e.target.value)))}
-            className="num w-16 rounded-lg border border-line bg-white/5 px-2 py-1 text-center text-ink outline-none focus:border-accent/40"
+            className="num w-16 rounded-lg border border-line bg-black/[0.03] px-2 py-1 text-center text-ink outline-none focus:border-accent/40"
           />
         </label>
         <button
@@ -240,7 +240,7 @@ function ChildrenList({ egp }: { egp: string }) {
           data?.children.slice(0, 80).map((c) => (
             <div
               key={c.file_name}
-              className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-white/5"
+              className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-black/[0.04]"
             >
               <span className="flex min-w-0 items-center gap-2">
                 {c.is_likely_duplicate && (

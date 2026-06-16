@@ -63,7 +63,7 @@ export default function OrphansPage() {
         <select
           value={cat}
           onChange={(e) => setCat(e.target.value)}
-          className="rounded-xl border border-line bg-white/5 px-3 py-2 text-sm text-ink outline-none"
+          className="rounded-xl border border-line bg-black/[0.03] px-3 py-2 text-sm text-ink outline-none"
         >
           {cats.map((c) => (
             <option key={c} value={c} className="bg-base-800">
@@ -95,7 +95,7 @@ export default function OrphansPage() {
               return (
                 <div
                   key={o.file_name}
-                  className="grid grid-cols-[2.5fr_1fr_1fr_0.8fr] items-center border-b border-line/50 px-4 py-2.5 text-sm hover:bg-white/[0.03]"
+                  className="grid grid-cols-[2.5fr_1fr_1fr_0.8fr] items-center border-b border-line/50 px-4 py-2.5 text-sm hover:bg-black/[0.03]"
                 >
                   <span className="truncate text-ink-muted" title={o.file_name}>
                     {o.file_name}
@@ -114,7 +114,7 @@ export default function OrphansPage() {
                       onChange={(e) =>
                         setPrioridade(cenario, "orfao", o.file_name, Math.max(1, Number(e.target.value)))
                       }
-                      className="num w-16 rounded-lg border border-line bg-white/5 px-2 py-1 text-center text-ink outline-none focus:border-accent/40"
+                      className="num w-16 rounded-lg border border-line bg-black/[0.03] px-2 py-1 text-center text-ink outline-none focus:border-accent/40"
                     />
                   </span>
                 </div>

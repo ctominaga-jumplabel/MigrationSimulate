@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 type Tone = "neutral" | "accent" | "electric" | "success" | "warn" | "danger";
 
 const tones: Record<Tone, string> = {
-  neutral: "bg-white/5 text-ink-muted border-line",
+  neutral: "bg-black/[0.04] text-ink-muted border-line",
   accent: "bg-accent/10 text-accent-soft border-accent/30",
   electric: "bg-electric/10 text-electric-soft border-electric/30",
   success: "bg-success/10 text-success border-success/30",

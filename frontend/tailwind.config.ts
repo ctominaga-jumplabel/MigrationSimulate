@@ -2,7 +2,8 @@ import type { Config } from "tailwindcss";
 
 /**
  * Design tokens — Cogna Migration Mission Control.
- * Tema dark premium. Acento Cogna (laranja/coral) + superfícies near-black.
+ * Tema claro (alinhado à identidade Cogna). Acento roxo Cogna (#8629FF)
+ * sobre superfícies brancas/claras.
  */
 const config: Config = {
   content: [
@@ -13,35 +14,36 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Fundo e superfícies (near-black em camadas).
+        // Fundo e superfícies (claras em camadas). Página levemente cinza,
+        // cards/navs em branco para "subirem" sobre o fundo.
         base: {
-          DEFAULT: "#07080c",
-          900: "#0a0c12",
-          800: "#0f121a",
-          700: "#161a24",
-          600: "#1e2330",
+          DEFAULT: "#e9ebf3", // fundo da página
+          900: "#f6f7fb", // superfícies frosted (nav/topbar) e insets claros
+          800: "#ffffff", // cards/dropdowns sólidos
+          700: "#ffffff",
+          600: "#eef0f7",
         },
-        // Acento Cogna.
+        // Acento Cogna (roxo).
         accent: {
-          DEFAULT: "#ff6a3d",
-          soft: "#ff8a63",
-          deep: "#e2531f",
+          DEFAULT: "#8629ff",
+          soft: "#7b22e6", // tom legível como texto sobre fundo claro
+          deep: "#5e15b5",
         },
-        // Acento secundário (azul elétrico — Databricks/tech).
+        // Acento secundário (azul — Databricks/tech).
         electric: {
-          DEFAULT: "#4d8dff",
-          soft: "#7aa9ff",
+          DEFAULT: "#3366ff",
+          soft: "#2456d6",
         },
-        success: "#36d399",
-        warn: "#fbbf24",
-        danger: "#f87272",
-        // Texto.
+        success: "#15a06b",
+        warn: "#c77d0a",
+        danger: "#dc2626",
+        // Texto (escuro com leve viés roxo).
         ink: {
-          DEFAULT: "#eef1f8",
-          muted: "#9aa3b8",
-          faint: "#5e6680",
+          DEFAULT: "#1a1430",
+          muted: "#5b556e",
+          faint: "#928da3",
         },
-        line: "rgba(255,255,255,0.08)",
+        line: "rgba(26,20,48,0.10)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
@@ -53,15 +55,16 @@ const config: Config = {
         "3xl": "1.75rem",
       },
       boxShadow: {
-        glass: "0 8px 40px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)",
-        glow: "0 0 0 1px rgba(255,106,61,0.25), 0 8px 30px -8px rgba(255,106,61,0.35)",
-        card: "0 1px 0 rgba(255,255,255,0.04), 0 12px 40px -16px rgba(0,0,0,0.7)",
+        glass:
+          "0 8px 30px -12px rgba(26,20,48,0.14), 0 2px 8px -4px rgba(26,20,48,0.08)",
+        glow: "0 0 0 1px rgba(134,41,255,0.20), 0 8px 30px -8px rgba(134,41,255,0.30)",
+        card: "0 1px 2px rgba(26,20,48,0.05), 0 12px 30px -16px rgba(26,20,48,0.16)",
       },
       backgroundImage: {
         "grad-base":
-          "radial-gradient(1200px 600px at 15% -10%, rgba(77,141,255,0.10), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255,106,61,0.10), transparent 55%)",
-        "grad-accent": "linear-gradient(135deg, #ff6a3d 0%, #e2531f 100%)",
-        "grad-electric": "linear-gradient(135deg, #4d8dff 0%, #2f6bdb 100%)",
+          "radial-gradient(1200px 600px at 15% -10%, rgba(134,41,255,0.10), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(51,102,255,0.08), transparent 55%)",
+        "grad-accent": "linear-gradient(135deg, #8629ff 0%, #5e15b5 100%)",
+        "grad-electric": "linear-gradient(135deg, #3366ff 0%, #2456d6 100%)",
       },
       keyframes: {
         "fade-up": {

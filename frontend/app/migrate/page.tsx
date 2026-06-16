@@ -179,10 +179,10 @@ function CategoriaGanho({ rows }: { rows: MigrateCategoriaRow[] }) {
                 −{fmtPct(r.ganho_pct, 0)}
               </span>
             </div>
-            <div className="relative h-6 overflow-hidden rounded-lg bg-white/[0.03]">
+            <div className="relative h-6 overflow-hidden rounded-lg bg-black/[0.05]">
               {/* manual (fundo) */}
               <div
-                className="absolute inset-y-0 left-0 rounded-lg bg-white/10"
+                className="absolute inset-y-0 left-0 rounded-lg bg-ink/15"
                 style={{ width: `${wManual}%` }}
               />
               {/* migrate (frente) */}

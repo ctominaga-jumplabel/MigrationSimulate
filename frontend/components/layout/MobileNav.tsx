@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "./Icon";
 import { GROUPS, NAV } from "./nav";
 
@@ -12,6 +13,12 @@ import { GROUPS, NAV } from "./nav";
 export function MobileNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Portal só após montar no cliente (evita mismatch de SSR).
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fecha o drawer sempre que a rota muda.
   useEffect(() => {
@@ -50,9 +57,11 @@ export function MobileNav() {
         <Icon name="HambergerMenu" size={20} />
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <div className="fixed inset-0 z-50 lg:hidden">
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {open && (
+              <div className="fixed inset-0 z-[60] lg:hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -124,8 +133,10 @@ export function MobileNav() {
               </nav>
             </motion.aside>
           </div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </>
   );
 }

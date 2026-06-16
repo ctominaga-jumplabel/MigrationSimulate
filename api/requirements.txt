@@ -1,0 +1,7 @@
+# API fina (FastAPI) sobre core.py. Autossuficiente para deploy (Render/Fly/etc.):
+# inclui o runtime do motor (pandas/pyarrow/openpyxl) — NÃO precisa de streamlit/plotly.
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.27,<1.0
+pandas>=2.2,<3.0
+pyarrow>=14.0
+openpyxl>=3.1,<4.0

@@ -1,0 +1,5 @@
+# Dependências da função Python serverless (frontend/api/index.py) no Vercel.
+# SEM pyarrow (lê CSV) e SEM uvicorn (o Vercel fornece o servidor ASGID) — leve.
+fastapi>=0.110,<1.0
+pandas>=2.2,<3.0
+openpyxl>=3.1,<4.0

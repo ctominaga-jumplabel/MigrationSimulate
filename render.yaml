@@ -1,0 +1,19 @@
+# Deploy da API fina (FastAPI sobre core.py) no Render.
+# A raiz do repo já contém core.py + data/*.parquet — é tudo que a API precisa
+# em runtime (o xlsx de 19MB e os .sas/.egp crus NÃO são necessários).
+services:
+  - type: web
+    name: cogna-mission-control-api
+    runtime: python
+    plan: free # spins down após inatividade; cold start ~30-50s (ok p/ demo)
+    buildCommand: pip install -r api/requirements.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.1"
+      # Domínio do frontend (Vercel). Defina no painel do Render após criar o app.
+      - key: FRONTEND_ORIGIN
+        sync: false
+      # Opcional: cobre previews da Vercel. Ex.: https://.*\.vercel\.app
+      - key: FRONTEND_ORIGIN_REGEX
+        sync: false

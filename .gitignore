@@ -1,0 +1,29 @@
+# --- Insumos brutos / pesados (NÃO publicar) ---------------------------------
+# A planilha-fonte (19MB) e os ~55k .sas/.egp crus não são necessários em runtime
+# (a API usa só os parquet). Manter fora do repo de deploy por peso e sigilo.
+*.xlsx
+~$*.xlsx
+all_sas/
+all_egps/
+sas_by_egp/
+
+# --- MANTER os parquet (a API depende deles) ---------------------------------
+!data/
+!data/*.parquet
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# --- Node / frontend ---------------------------------------------------------
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/*.tsbuildinfo
+.env*.local
+
+# --- Vercel ------------------------------------------------------------------
+.vercel/

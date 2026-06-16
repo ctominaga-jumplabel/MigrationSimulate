@@ -1,0 +1,8 @@
+# Simulador de Esforço — Migração SAS -> Databricks (PySpark)
+# Versões major conhecidas (testado em Python 3.13).
+streamlit>=1.58,<2.0
+pandas>=2.2,<3.0
+openpyxl>=3.1,<4.0      # leitura do .xlsx (ETL) e escrita do export .xlsx
+pyarrow>=14.0           # backend dos parquet (data/*.parquet)
+plotly>=5.20,<6.0       # gráficos (barras, ocupação, Gantt)
+pytest>=8.0,<9.0        # smoke tests do motor (core.py)

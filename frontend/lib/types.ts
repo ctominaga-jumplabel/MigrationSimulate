@@ -1,0 +1,116 @@
+// Tipos do domínio — derivados do contrato da API (api/main.py).
+// NÃO contêm lógica de cálculo; só a forma dos dados que a API devolve.
+
+export type Cenario = "bruto" | "sem_dup";
+
+export interface Params {
+  n_consultores: number;
+  horas_dia: number;
+  J_base: number;
+  J_task: number;
+  K: number;
+  data_inicio: string; // ISO yyyy-mm-dd
+  cenario: Cenario;
+  prioridades?: PrioridadeItem[];
+}
+
+export interface PrioridadeItem {
+  tipo: "egp" | "orfao";
+  nome: string;
+  prioridade: number;
+}
+
+export interface ScenarioKpis {
+  horas_sas: number;
+  horas_job: number;
+  esforco_base: number;
+  K: number;
+  esforco_total: number;
+  duracao_horas: number;
+  duracao_dias_uteis: number;
+  n_sprints: number;
+  n_egps: number;
+  n_orfaos: number;
+}
+
+export interface ScenariosResponse {
+  bruto: ScenarioKpis;
+  sem_dup: ScenarioKpis;
+}
+
+export interface OverviewBlock {
+  horas_totais: number;
+  n_egps: number;
+  n_orfaos: number;
+  n_sas: number;
+  n_pipeline_family: number;
+}
+
+export interface CategoriaRow {
+  categoria: string;
+  n_sas: number;
+  soma_horas: number;
+}
+
+export interface CatalogResponse {
+  overview: { bruto: OverviewBlock; sem_dup_arquivo: OverviewBlock };
+  categoria_distribution: CategoriaRow[];
+  categoria_order: string[];
+}
+
+export interface EgpRow {
+  egp_name: string;
+  n_sas: number;
+  horas_sas: number;
+  horas_job: number;
+  horas_total: number;
+  categoria_predominante: string;
+}
+
+export interface EgpsResponse {
+  cenario: Cenario;
+  egps: EgpRow[];
+}
+
+export interface SasChild {
+  file_name: string;
+  categoria: string;
+  horas_estimadas: number;
+  is_likely_duplicate: boolean;
+}
+
+export interface OrphanRow {
+  file_name: string;
+  categoria: string;
+  horas_estimadas: number;
+}
+
+export interface OrphansResponse {
+  cenario: Cenario;
+  orphans: OrphanRow[];
+}
+
+export interface SprintRow {
+  sprint: number;
+  data_inicio: string;
+  data_fim: string;
+  horas_alocadas: number;
+  capacidade: number;
+  itens_no_sprint: number;
+}
+
+export interface AlocacaoRow {
+  prioridade: number;
+  tipo: "egp" | "orfao";
+  nome: string;
+  horas: number;
+  sprint_inicial: number;
+  sprint_final: number;
+}
+
+export interface SprintsResponse {
+  cenario: Cenario;
+  kpis: ScenarioKpis;
+  resumo_sprints: SprintRow[];
+  alocacao: AlocacaoRow[];
+}

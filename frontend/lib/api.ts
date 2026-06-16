@@ -1,0 +1,52 @@
+// Cliente da API fina (FastAPI sobre core.py). Sem cálculo — só transporte.
+import type {
+  CatalogResponse,
+  EgpsResponse,
+  OrphansResponse,
+  Params,
+  SasChild,
+  ScenariosResponse,
+  SprintsResponse,
+} from "./types";
+
+// Em produção (Vercel), a API é same-origin (/api/* → função Python) → BASE "".
+// Em dev local, .env.local aponta para a API em http://localhost:8000.
+const BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`API ${path} -> ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+async function get<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`);
+  if (!res.ok) throw new Error(`API ${path} -> ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+export const api = {
+  catalog: () => get<CatalogResponse>("/api/catalog"),
+  scenarios: (p: Params) => post<ScenariosResponse>("/api/scenarios", p),
+  egps: (p: Params) => post<EgpsResponse>("/api/egps", p),
+  egpChildren: (egp_name: string) =>
+    post<{ egp_name: string; children: SasChild[] }>("/api/egps/children", {
+      egp_name,
+    }),
+  orphans: (p: Params) => post<OrphansResponse>("/api/orphans", p),
+  sprints: (p: Params) => post<SprintsResponse>("/api/sprints", p),
+  exportUrl: () => `${BASE}/api/export`,
+  async exportFile(p: Params, formato: "xlsx" | "csv"): Promise<Blob> {
+    const res = await fetch(`${BASE}/api/export?formato=${formato}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(p),
+    });
+    if (!res.ok) throw new Error(`export ${formato} -> ${res.status}`);
+    return res.blob();
+  },
+};

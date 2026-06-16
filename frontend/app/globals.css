@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html,
+  body {
+    @apply bg-base text-ink antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  body {
+    background-image: var(--tw-bg-grad, none);
+    min-height: 100vh;
+  }
+  ::selection {
+    background: rgba(255, 106, 61, 0.3);
+  }
+  /* Scrollbar premium */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.16);
+    background-clip: padding-box;
+  }
+}
+
+@layer components {
+  /* Superfície glassmorphism */
+  .glass {
+    @apply bg-base-800/60 backdrop-blur-xl border border-line shadow-glass;
+  }
+  .glass-strong {
+    @apply bg-base-700/70 backdrop-blur-2xl border border-line shadow-glass;
+  }
+  .grad-bg {
+    background-image: radial-gradient(
+        1200px 600px at 15% -10%,
+        rgba(77, 141, 255, 0.1),
+        transparent 60%
+      ),
+      radial-gradient(
+        1000px 520px at 100% 0%,
+        rgba(255, 106, 61, 0.1),
+        transparent 55%
+      );
+  }
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Slider de alavanca */
+  .lever-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 999px;
+    cursor: pointer;
+    outline: none;
+  }
+  .lever-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 18px;
+    width: 18px;
+    border-radius: 999px;
+    background: #fff;
+    border: 3px solid #ff6a3d;
+    box-shadow: 0 2px 10px rgba(255, 106, 61, 0.5);
+    transition: transform 0.1s ease;
+  }
+  .lever-range::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+  .lever-range::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 999px;
+    background: #fff;
+    border: 3px solid #ff6a3d;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

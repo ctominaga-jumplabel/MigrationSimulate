@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/cn";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
@@ -25,18 +24,16 @@ export function Sidebar() {
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-line bg-base-900/70 backdrop-blur-xl lg:flex">
-      <div className="flex flex-col gap-2.5 px-6 py-6">
-        <Image
-          src="/cogna-logo.png"
-          alt="Cogna"
-          width={628}
-          height={230}
-          priority
-          className="h-8 w-auto"
-        />
-        <p className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">
-          Mission Control · SAS → Databricks
-        </p>
+      <div className="flex items-center gap-3 px-6 py-6">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-grad-accent shadow-glow">
+          <Icon name="Routing" size={20} color="#fff" variant="Bold" />
+        </div>
+        <div className="leading-tight">
+          <p className="text-base font-black tracking-tight text-ink">Cogna</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">
+            Mission Control
+          </p>
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-2">

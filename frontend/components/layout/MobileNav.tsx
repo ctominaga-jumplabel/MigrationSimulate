@@ -4,7 +4,6 @@ import { cn } from "@/lib/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "./Icon";
@@ -78,18 +77,16 @@ export function MobileNav() {
               className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-line bg-base-900/95 backdrop-blur-xl"
             >
               <div className="flex items-center justify-between px-5 py-5">
-                <div className="flex flex-col gap-1.5">
-                  <Image
-                    src="/cogna-logo.png"
-                    alt="Cogna"
-                    width={628}
-                    height={230}
-                    priority
-                    className="h-7 w-auto"
-                  />
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">
-                    Mission Control · SAS → Databricks
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-grad-accent shadow-glow">
+                    <Icon name="Routing" size={20} color="#fff" variant="Bold" />
+                  </div>
+                  <div className="leading-tight">
+                    <p className="text-base font-black tracking-tight text-ink">Cogna</p>
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">
+                      Mission Control
+                    </p>
+                  </div>
                 </div>
                 <button
                   type="button"

@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/cn";
 import { motion } from "framer-motion";
+import { useId } from "react";
 
 interface Option<T extends string> {
   value: T;
@@ -19,6 +20,9 @@ export function SegmentedControl<T extends string>({
   onChange: (v: T) => void;
   size?: "sm" | "md";
 }) {
+  // layoutId único por instância — evita que múltiplos SegmentedControls na
+  // mesma página compartilhem a pílula ativa (some o fundo de um deles).
+  const layoutId = useId();
   return (
     <div className="inline-flex rounded-xl border border-line bg-base-900/60 p-1">
       {options.map((opt) => {
@@ -35,7 +39,7 @@ export function SegmentedControl<T extends string>({
           >
             {active && (
               <motion.span
-                layoutId="seg-active"
+                layoutId={layoutId}
                 className="absolute inset-0 rounded-lg bg-grad-accent shadow-glow"
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />

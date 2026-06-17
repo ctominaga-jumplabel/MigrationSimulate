@@ -174,11 +174,15 @@ export default function OverviewPage() {
                   label="Esforço"
                   value={`${fmtHoras(migActive.manual.esforco_total)} → ${fmtHoras(migActive.migrate.esforco_total)}`}
                 />
-                <MigStat label="Economia" value={`−${fmtHoras(migActive.economia_horas)}`} success />
+                <MigStat
+                  label="Duração"
+                  value={`${fmtDec(migActive.manual.duracao_dias_uteis)} → ${fmtDec(migActive.migrate.duracao_dias_uteis)} dias`}
+                />
                 <MigStat
                   label="Sprints"
                   value={`${fmtInt(migActive.manual.n_sprints)} → ${fmtInt(migActive.migrate.n_sprints)}`}
                 />
+                <MigStat label="Economia" value={`−${fmtHoras(migActive.economia_horas)}`} success />
               </div>
 
               <Link href="/migrate" className="ml-auto">

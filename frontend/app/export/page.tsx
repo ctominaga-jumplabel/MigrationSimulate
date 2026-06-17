@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { api } from "@/lib/api";
-import { fmtData, fmtDec, fmtHoras, fmtInt } from "@/lib/format";
-import { useParams, useScenarios } from "@/lib/hooks";
+import { fmtData, fmtDec, fmtHoras, fmtInt, fmtPct } from "@/lib/format";
+import { useMigrate, useMigrateGain, useParams, useScenarios } from "@/lib/hooks";
 import { useSim } from "@/lib/store";
 import { useState } from "react";
 
@@ -16,13 +16,17 @@ const RISCOS = [
   "J_base e J_task são estimativas de partida — calibrar com o time de migração.",
   "O calendário pula fins de semana, mas não considera feriados (v1).",
   "As horas estimadas herdam as premissas da metodologia (pessoa pleno em SAS + PySpark; dedup ×0,3).",
+  "A planilha exportada usa as horas do cenário manual (sem Migrate). A 'Projeção com Migrate' é uma estimativa de aceleração e não altera o plano nem as datas.",
 ];
 
 export default function ExportPage() {
   const s = useSim();
   const params = useParams();
+  const gain = useMigrateGain();
   const { data } = useScenarios(params);
+  const { data: mig } = useMigrate(params, gain);
   const active = data?.[s.cenario];
+  const migActive = mig?.[s.cenario];
   const [busy, setBusy] = useState<"xlsx" | "csv" | null>(null);
 
   async function download(formato: "xlsx" | "csv") {
@@ -75,6 +79,38 @@ export default function ExportPage() {
             <Headline label="Nº de sprints" value={active ? fmtInt(active.n_sprints) : "—"} />
             <Headline label="EGPs + órfãos" value={active ? `${fmtInt(active.n_egps)} + ${fmtInt(active.n_orfaos)}` : "—"} />
           </div>
+
+          {migActive && (
+            <div className="mt-5 rounded-xl border border-success/20 bg-success/[0.04] p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-success">
+                  <Icon name="MagicStar" size={16} variant="Bold" />
+                </span>
+                <p className="text-xs font-bold text-ink">Projeção com Migrate</p>
+                <Badge tone="success">−{fmtPct(migActive.ganho_pct, 1)}</Badge>
+              </div>
+              <div className="mt-3 divide-y divide-line/60">
+                <MigRow
+                  label="Esforço total"
+                  manual={fmtHoras(migActive.manual.esforco_total)}
+                  migrate={fmtHoras(migActive.migrate.esforco_total)}
+                />
+                <MigRow
+                  label="Duração"
+                  manual={fmtDec(migActive.manual.duracao_dias_uteis) + " dias"}
+                  migrate={fmtDec(migActive.migrate.duracao_dias_uteis) + " dias"}
+                />
+                <MigRow
+                  label="Nº de sprints"
+                  manual={fmtInt(migActive.manual.n_sprints)}
+                  migrate={fmtInt(migActive.migrate.n_sprints)}
+                />
+              </div>
+              <p className="mt-2 text-[11px] text-ink-faint">
+                A planilha exportada reflete o cenário manual; o Migrate é uma projeção de aceleração.
+              </p>
+            </div>
+          )}
 
           <h4 className="mt-6 text-xs font-semibold uppercase tracking-wide text-ink-faint">
             Parâmetros usados
@@ -140,6 +176,27 @@ function Headline({ label, value }: { label: string; value: string }) {
     <div className="rounded-xl border border-line bg-base-900/40 px-4 py-3">
       <p className="text-[11px] uppercase tracking-wide text-ink-faint">{label}</p>
       <p className="num mt-1 text-lg font-bold text-ink">{value}</p>
+    </div>
+  );
+}
+
+function MigRow({
+  label,
+  manual,
+  migrate,
+}: {
+  label: string;
+  manual: string;
+  migrate: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2 text-sm">
+      <span className="text-ink-muted">{label}</span>
+      <span className="num font-semibold">
+        <span className="text-ink-faint">{manual}</span>
+        <span className="mx-1.5 text-ink-faint">→</span>
+        <span className="text-success">{migrate}</span>
+      </span>
     </div>
   );
 }

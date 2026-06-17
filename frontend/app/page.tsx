@@ -37,7 +37,7 @@ export default function OverviewPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative overflow-hidden rounded-3xl border border-line bg-base-800/40 px-7 py-10 backdrop-blur-xl md:px-10 md:py-14"
+        className="relative overflow-hidden rounded-3xl border border-line bg-base-800/80 px-7 py-10 backdrop-blur-xl md:px-10 md:py-14"
       >
         <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-28 left-1/3 h-72 w-72 rounded-full bg-electric/15 blur-3xl" />
@@ -52,7 +52,7 @@ export default function OverviewPage() {
               Mission Control
             </span>
           </h1>
-          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-ink-soft md:text-base">
+          <p className="mt-5 max-w-2xl text-sm font-medium leading-relaxed text-ink md:text-base">
             Central executiva para simular esforço, duração, sprints e risco da
             migração da base SAS (3.198 EGPs · 54.972 arquivos) para Databricks /
             PySpark. Ajuste as alavancas e veja o impacto recalculado ao vivo —

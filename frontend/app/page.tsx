@@ -47,7 +47,10 @@ export default function OverviewPage() {
               Mission Control
             </span>
           </h1>
-          <p className="mt-5 max-w-2xl text-sm font-medium leading-relaxed text-ink md:text-base">
+          {/* md:text-[1rem] (não md:text-base): a paleta tem uma cor `base`, então
+              `text-base` também emite color:#e9ebf3 (cor do fundo) e, na camada
+              responsiva, sobrescreveria o text-ink — deixando o texto invisível. */}
+          <p className="mt-5 max-w-2xl text-sm font-medium leading-relaxed text-ink md:text-[1rem]">
             Central executiva para simular esforço, duração, sprints e risco da
             migração da base SAS (3.198 EGPs · 54.972 arquivos) para Databricks /
             PySpark. Ajuste as alavancas e veja o impacto recalculado ao vivo —

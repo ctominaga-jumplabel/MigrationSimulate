@@ -439,6 +439,32 @@ def test_compute_migrate_job_reduzido_e_monotonia(dataset_df, rollup_df):
             )
 
 
+def test_egp_migrate_table_reconcilia_com_compute_migrate(dataset_df, rollup_df):
+    """(29) egp_migrate_table reconcilia com compute_migrate: Σ horas_job_migrate ==
+    overhead de Job migrado do cenário; Σ horas_sas_migrate (EGPs) + órfãos
+    reduzidos == horas_sas migrado do cenário. Colunas migrate ≤ manual por EGP."""
+    params = _params()
+    gain = dict(core.MIGRATE_GAIN_DEFAULT)
+    mg = core.compute_migrate(dataset_df, rollup_df, params, gain_map=gain)
+    for cen in ("bruto", "sem_dup"):
+        tab = core.egp_migrate_table(dataset_df, rollup_df, params, cen, gain_map=gain)
+        # migrate ≤ manual em cada componente, por EGP.
+        assert (tab["horas_sas_migrate"] <= tab["horas_sas"] + 1e-9).all()
+        assert (tab["horas_job_migrate"] <= tab["horas_job"] + 1e-9).all()
+        assert (tab["horas_total_migrate"] <= tab["horas_total"] + 1e-9).all()
+        # Job migrado reconcilia com o total do cenário (órfãos não têm Job).
+        assert float(tab["horas_job_migrate"].sum()) == pytest.approx(
+            mg[cen]["migrate"]["horas_job"], abs=1.0
+        )
+        # Conversão migrada: EGPs + órfãos reduzidos == horas_sas migrado do cenário.
+        orf = core.orphan_table(dataset_df, cen)
+        g_orf = orf["categoria"].map(lambda c: float(gain.get(c, 0.0)))
+        orf_mig = float((orf["horas_estimadas"].astype(float) * (1 - g_orf / 100.0)).sum())
+        assert float(tab["horas_sas_migrate"].sum()) + orf_mig == pytest.approx(
+            mg[cen]["migrate"]["horas_sas"], abs=1.0
+        )
+
+
 def test_compute_migrate_clampa_ganho_fora_de_faixa(dataset_df, rollup_df):
     """(28) Ganho >100 é clampado a 100 (e <0 a 0): não estoura a conversão."""
     mg = core.compute_migrate(

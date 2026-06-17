@@ -133,10 +133,12 @@ def scenarios(params: Params) -> dict:
 # EGPs / órfãos (tabelas do cenário ativo). Listas completas; frontend filtra.
 # ---------------------------------------------------------------------------
 @app.post("/api/egps")
-def egps(params: Params) -> dict:
-    _, rollup_df = _dfs()
-    table = core.egp_table(rollup_df, params.core_params(), params.cenario)
-    return {"cenario": params.cenario, "egps": df_to_records(table)}
+def egps(req: MigrateRequest) -> dict:
+    dataset_df, rollup_df = _dfs()
+    table = core.egp_migrate_table(
+        dataset_df, rollup_df, req.core_params(), req.cenario, gain_map=req.core_gain()
+    )
+    return {"cenario": req.cenario, "egps": df_to_records(table)}
 
 
 @app.post("/api/egps/children")

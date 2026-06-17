@@ -119,9 +119,11 @@ def scenarios(params: Params) -> dict:
 
 
 @api_app.post("/api/egps")
-def egps(params: Params) -> dict:
-    table = core.egp_table(ROLLUP_DF, params.core_params(), params.cenario)
-    return {"cenario": params.cenario, "egps": df_to_records(table)}
+def egps(req: MigrateRequest) -> dict:
+    table = core.egp_migrate_table(
+        DATASET_DF, ROLLUP_DF, req.core_params(), req.cenario, gain_map=req.core_gain()
+    )
+    return {"cenario": req.cenario, "egps": df_to_records(table)}
 
 
 @api_app.post("/api/egps/children")

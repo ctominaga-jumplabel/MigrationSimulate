@@ -500,14 +500,14 @@ def _merge_gain(gain_map: dict | None) -> dict:
     return merged
 
 
-def _job_overhead_migrate(
+def _job_overhead_migrate_by_egp(
     dataset_df: pd.DataFrame,
     rollup_df: pd.DataFrame,
     params: dict,
     gain: dict,
     cenario: str,
-) -> float:
-    """Overhead de Job TOTAL do cenário COM o ganho do Migrate.
+) -> pd.DataFrame:
+    """Overhead de Job COM o ganho do Migrate, POR EGP.
 
     O Migrate gera os Jobs no Databricks, então o ganho também reduz o overhead de
     orquestração — mas de forma PONDERADA pela complexidade dos `.sas` de cada EGP
@@ -520,7 +520,9 @@ def _job_overhead_migrate(
     A ponderação é por CONTAGEM de `.sas` (o overhead J_task escala com `n_sas`),
     sobre o MESMO conjunto de `.sas` que define `n_sas` do cenário em
     `compute_scenarios` (todos no Bruto; só não-duplicatas de EGP canônico no
-    Sem-dup). Órfãos não têm Job e não entram. Retorna a soma sobre os EGPs. Pura.
+    Sem-dup). Órfãos não têm Job e não entram. Retorna um DataFrame com colunas
+    egp_name, horas_job_migrate (base do total `_job_overhead_migrate` e da coluna
+    de Job migrado em `egp_migrate_table`). Pura.
     """
     # `n_sas` autoritativo por EGP — o MESMO usado no overhead de compute_scenarios.
     if cenario == "sem_dup":
@@ -550,8 +552,71 @@ def _job_overhead_migrate(
     merged = egp_n.merge(por_egp[["egp_name", "g_egp"]], on="egp_name", how="left")
     merged["g_egp"] = merged["g_egp"].fillna(0.0)
     job = job_overhead(merged["n_sas"].astype(float), params)
-    job_migrate = job * (1.0 - merged["g_egp"] / 100.0)
-    return float(job_migrate.sum())
+    merged["horas_job_migrate"] = (job * (1.0 - merged["g_egp"] / 100.0)).astype(float)
+    return merged[["egp_name", "horas_job_migrate"]]
+
+
+def _job_overhead_migrate(
+    dataset_df: pd.DataFrame,
+    rollup_df: pd.DataFrame,
+    params: dict,
+    gain: dict,
+    cenario: str,
+) -> float:
+    """Overhead de Job TOTAL do cenário COM o ganho do Migrate (Σ sobre os EGPs).
+
+    Soma de `_job_overhead_migrate_by_egp` — ver lá a derivação do ganho ponderado
+    por EGP. Mantido como API estável de `compute_migrate`. Pura."""
+    by_egp = _job_overhead_migrate_by_egp(dataset_df, rollup_df, params, gain, cenario)
+    return float(by_egp["horas_job_migrate"].sum())
+
+
+def egp_migrate_table(
+    dataset_df: pd.DataFrame,
+    rollup_df: pd.DataFrame,
+    params: dict,
+    cenario: str,
+    gain_map: dict | None = None,
+) -> pd.DataFrame:
+    """`egp_table` + colunas COM Migrate por EGP — comparação a nível de código.
+
+    Acrescenta `horas_sas_migrate`, `horas_job_migrate` e `horas_total_migrate` a
+    cada EGP. O ganho incide por `.sas` (pela sua categoria) na conversão e, no
+    Job, ponderado pela complexidade dos `.sas` do EGP (mesma regra de
+    `compute_migrate`/`_job_overhead_migrate_by_egp`).
+
+    Reconciliável (Quality Gate §9): Σ horas_job_migrate == `_job_overhead_migrate`
+    do cenário; Σ horas_sas_migrate (EGPs) + Σ (órfãos reduzidos por categoria) ==
+    `compute_migrate[cen]['migrate']['horas_sas']`. Pura, sem Streamlit.
+    """
+    gain = _merge_gain(gain_map)
+    base = egp_table(rollup_df, params, cenario)
+
+    # Mesmo conjunto de `.sas` (não-órfãos) que define n_sas/horas_sas do cenário.
+    if cenario == "sem_dup":
+        canon_set = set(canonical_rollup(rollup_df)["egp_name"].tolist())
+        nao_dup = ~dataset_df["is_likely_duplicate"]
+        nao_orfao = dataset_df["is_orphan"] == False  # noqa: E712
+        sub = dataset_df[dataset_df["egp_name"].isin(canon_set) & nao_dup & nao_orfao]
+    elif cenario == "bruto":
+        sub = dataset_df[dataset_df["is_orphan"] == False]  # noqa: E712
+    else:
+        raise ValueError(f"cenário inválido: {cenario!r}")
+
+    # Conversão `.sas` reduzida por categoria, somada por EGP.
+    g = sub["categoria"].map(lambda c: float(gain.get(c, 0.0)))
+    h_mig = sub["horas_estimadas"].astype(float) * (1.0 - g / 100.0)
+    sas_mig = h_mig.groupby(sub["egp_name"], dropna=False).sum()
+    base["horas_sas_migrate"] = base["egp_name"].map(sas_mig).fillna(0.0).astype(float)
+
+    # Overhead de Job reduzido (ponderado por complexidade), do mesmo motor.
+    job_by_egp = _job_overhead_migrate_by_egp(
+        dataset_df, rollup_df, params, gain, cenario
+    )
+    job_map = dict(zip(job_by_egp["egp_name"], job_by_egp["horas_job_migrate"]))
+    base["horas_job_migrate"] = base["egp_name"].map(job_map).fillna(0.0).astype(float)
+    base["horas_total_migrate"] = base["horas_sas_migrate"] + base["horas_job_migrate"]
+    return base
 
 
 def compute_migrate(

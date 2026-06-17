@@ -4,6 +4,7 @@ export const CHART = {
   accentSoft: "#a45cff",
   electric: "#3366ff",
   electricSoft: "#6f93ff",
+  success: "#15a06b",
   grid: "rgba(26,20,48,0.08)",
   axis: "#928da3",
   text: "#5b556e",

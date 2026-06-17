@@ -1,5 +1,6 @@
 "use client";
 
+import { MigrateBanner } from "@/components/domain/MigrateBanner";
 import { Icon } from "@/components/layout/Icon";
 import { Badge, categoriaTone } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -8,7 +9,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { fmtHoras, fmtInt } from "@/lib/format";
-import { useOrphans, useParams } from "@/lib/hooks";
+import { useMigrateGain, useOrphans, useParams } from "@/lib/hooks";
 import { useSim } from "@/lib/store";
 import { useMemo, useState } from "react";
 
@@ -17,6 +18,7 @@ export default function OrphansPage() {
   const cenario = useSim((s) => s.cenario);
   const prioridades = useSim((s) => s.prioridades[cenario]);
   const setPrioridade = useSim((s) => s.setPrioridade);
+  const gain = useMigrateGain();
   const { data, isLoading } = useOrphans(params);
 
   const [q, setQ] = useState("");
@@ -32,6 +34,22 @@ export default function OrphansPage() {
 
   const cats = ["todas", "Trivial", "Simples", "Médio", "Complexo", "Muito Complexo"];
   const total = orphans.reduce((s, o) => s + o.horas_estimadas, 0);
+
+  // Órfãos não têm overhead de Job; o ganho do Migrate incide direto na conversão
+  // de cada arquivo, pela sua própria categoria (mesma % calibrada que o motor usa).
+  const migrate = useMemo(() => {
+    if (!orphans.length) return null;
+    const totalMig = orphans.reduce(
+      (s, o) => s + o.horas_estimadas * (1 - (gain[o.categoria] ?? 0) / 100),
+      0
+    );
+    const economia = total - totalMig;
+    return {
+      total: totalMig,
+      economia,
+      ganhoPct: total > 0 ? (economia / total) * 100 : 0,
+    };
+  }, [orphans, gain, total]);
 
   return (
     <div className="space-y-6">
@@ -55,6 +73,25 @@ export default function OrphansPage() {
           icon="Chart"
         />
       </div>
+
+      {migrate && (
+        <MigrateBanner
+          ganhoPct={migrate.ganhoPct}
+          title="Aceleração com Migrate"
+          subtitle="ganho aplicado à conversão de cada órfão por complexidade — órfãos não têm overhead de Job"
+          stats={[
+            {
+              label: "Horas estimadas",
+              value: `${fmtHoras(total)} → ${fmtHoras(migrate.total)}`,
+            },
+            {
+              label: "Economia",
+              value: `−${fmtHoras(migrate.economia)}`,
+              success: true,
+            },
+          ]}
+        />
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-[220px] flex-1">

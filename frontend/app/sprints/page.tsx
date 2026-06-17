@@ -1,9 +1,9 @@
 "use client";
 
 import { SprintOccupancyChart } from "@/components/charts/SprintOccupancyChart";
+import { MigrateBanner } from "@/components/domain/MigrateBanner";
 import { Icon } from "@/components/layout/Icon";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -12,7 +12,6 @@ import { useMigrate, useMigrateGain, useParams, useSprints } from "@/lib/hooks";
 import { useSim } from "@/lib/store";
 import type { SprintRow } from "@/lib/types";
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
 export default function SprintsPage() {
@@ -72,55 +71,26 @@ export default function SprintsPage() {
       )}
 
       {migActive && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <Card className="relative overflow-hidden p-6">
-            <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-success/20 blur-3xl" />
-            <div className="relative flex flex-wrap items-center gap-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-grad-accent shadow-glow">
-                  <Icon name="MagicStar" size={22} color="#fff" variant="Bold" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-ink">
-                      Com Migrate, o mesmo backlog caberia em menos sprints
-                    </p>
-                    <Badge tone="success">−{fmtPct(migActive.ganho_pct, 1)}</Badge>
-                  </div>
-                  <p className="mt-0.5 text-xs text-ink-muted">
-                    projeção (MigrateMind) — o plano e as datas abaixo seguem o cenário manual
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-1 flex-wrap items-center gap-6">
-                <MigStat
-                  label="Sprints"
-                  value={`${fmtInt(migActive.manual.n_sprints)} → ${fmtInt(migActive.migrate.n_sprints)}`}
-                />
-                <MigStat
-                  label="Duração"
-                  value={`${fmtDec(migActive.manual.duracao_dias_uteis)} → ${fmtDec(migActive.migrate.duracao_dias_uteis)} dias`}
-                />
-                <MigStat
-                  label="Economia"
-                  value={`−${fmtHoras(migActive.economia_horas)}`}
-                  success
-                />
-              </div>
-
-              <Link href="/migrate" className="ml-auto">
-                <Button variant="ghost">
-                  Tempo de Desenvolvimento <Icon name="ArrowRight" size={16} />
-                </Button>
-              </Link>
-            </div>
-          </Card>
-        </motion.div>
+        <MigrateBanner
+          ganhoPct={migActive.ganho_pct}
+          title="Com Migrate, o mesmo backlog caberia em menos sprints"
+          subtitle="projeção (MigrateMind) — o plano e as datas abaixo seguem o cenário manual"
+          stats={[
+            {
+              label: "Sprints",
+              value: `${fmtInt(migActive.manual.n_sprints)} → ${fmtInt(migActive.migrate.n_sprints)}`,
+            },
+            {
+              label: "Duração",
+              value: `${fmtDec(migActive.manual.duracao_dias_uteis)} → ${fmtDec(migActive.migrate.duracao_dias_uteis)} dias`,
+            },
+            {
+              label: "Economia",
+              value: `−${fmtHoras(migActive.economia_horas)}`,
+              success: true,
+            },
+          ]}
+        />
       )}
 
       <div>
@@ -263,29 +233,6 @@ function SprintCard({
         <span>{fmtInt(sp.itens_no_sprint)} itens</span>
       </div>
     </motion.button>
-  );
-}
-
-function MigStat({
-  label,
-  value,
-  success,
-}: {
-  label: string;
-  value: string;
-  success?: boolean;
-}) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-wide text-ink-faint">{label}</p>
-      <p
-        className={`num mt-0.5 text-sm font-bold ${
-          success ? "text-success" : "text-ink"
-        }`}
-      >
-        {value}
-      </p>
-    </div>
   );
 }
 

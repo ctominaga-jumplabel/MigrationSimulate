@@ -1,5 +1,6 @@
 "use client";
 
+import { MigrateBanner } from "@/components/domain/MigrateBanner";
 import { Icon } from "@/components/layout/Icon";
 import { Badge, categoriaTone } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -9,7 +10,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { fmtHoras, fmtInt } from "@/lib/format";
-import { useEgpChildren, useEgps, useParams } from "@/lib/hooks";
+import { useEgpChildren, useEgps, useMigrate, useMigrateGain, useParams } from "@/lib/hooks";
 import { useSim } from "@/lib/store";
 import type { EgpRow } from "@/lib/types";
 import { AnimatePresence, motion } from "framer-motion";
@@ -22,7 +23,10 @@ export default function PipelinesPage() {
   const cenario = useSim((s) => s.cenario);
   const prioridades = useSim((s) => s.prioridades[cenario]);
   const setPrioridade = useSim((s) => s.setPrioridade);
+  const gain = useMigrateGain();
   const { data, isLoading } = useEgps(params);
+  const { data: mig } = useMigrate(params, gain);
+  const migActive = mig?.[cenario];
 
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("horas_total");
@@ -64,6 +68,33 @@ export default function PipelinesPage() {
           </Badge>
         }
       />
+
+      {migActive && (
+        <MigrateBanner
+          ganhoPct={migActive.ganho_pct}
+          title="Aceleração com Migrate"
+          subtitle="projeção (MigrateMind) no cenário — conversão .sas e overhead de Job reduzidos; a tabela abaixo mostra as horas manuais"
+          stats={[
+            {
+              label: "Esforço",
+              value: `${fmtHoras(migActive.manual.esforco_total)} → ${fmtHoras(migActive.migrate.esforco_total)}`,
+            },
+            {
+              label: "Horas .sas",
+              value: `${fmtHoras(migActive.manual.horas_sas)} → ${fmtHoras(migActive.migrate.horas_sas)}`,
+            },
+            {
+              label: "Overhead de Job",
+              value: `${fmtHoras(migActive.manual.horas_job)} → ${fmtHoras(migActive.migrate.horas_job)}`,
+            },
+            {
+              label: "Economia",
+              value: `−${fmtHoras(migActive.economia_horas)}`,
+              success: true,
+            },
+          ]}
+        />
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-[220px] flex-1">

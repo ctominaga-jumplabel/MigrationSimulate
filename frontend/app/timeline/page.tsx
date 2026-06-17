@@ -1,13 +1,14 @@
 "use client";
 
+import { MigrateBanner } from "@/components/domain/MigrateBanner";
 import { Icon } from "@/components/layout/Icon";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { fmtData, fmtHoras, fmtInt } from "@/lib/format";
-import { useParams, useSprints } from "@/lib/hooks";
+import { fmtData, fmtDec, fmtHoras, fmtInt } from "@/lib/format";
+import { useMigrate, useMigrateGain, useParams, useSprints } from "@/lib/hooks";
 import { useSim } from "@/lib/store";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
@@ -15,7 +16,10 @@ import { useMemo, useState } from "react";
 export default function TimelinePage() {
   const params = useParams();
   const cenario = useSim((s) => s.cenario);
+  const gain = useMigrateGain();
   const { data, isLoading } = useSprints(params);
+  const { data: mig } = useMigrate(params, gain);
+  const migActive = mig?.[cenario];
   const [topN, setTopN] = useState(20);
 
   const resumo = data?.resumo_sprints ?? [];
@@ -51,6 +55,29 @@ export default function TimelinePage() {
           </div>
         }
       />
+
+      {migActive && (
+        <MigrateBanner
+          ganhoPct={migActive.ganho_pct}
+          title="Com Migrate, a linha do tempo encurta"
+          subtitle="projeção (MigrateMind) — as barras abaixo refletem o plano do cenário manual"
+          stats={[
+            {
+              label: "Sprints",
+              value: `${fmtInt(migActive.manual.n_sprints)} → ${fmtInt(migActive.migrate.n_sprints)}`,
+            },
+            {
+              label: "Duração",
+              value: `${fmtDec(migActive.manual.duracao_dias_uteis)} → ${fmtDec(migActive.migrate.duracao_dias_uteis)} dias`,
+            },
+            {
+              label: "Economia",
+              value: `−${fmtHoras(migActive.economia_horas)}`,
+              success: true,
+            },
+          ]}
+        />
+      )}
 
       {isLoading ? (
         <Skeleton className="h-96" />

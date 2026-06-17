@@ -33,12 +33,7 @@ export default function OverviewPage() {
   return (
     <div className="space-y-8">
       {/* HERO */}
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative overflow-hidden rounded-3xl border border-line bg-base-800/80 px-7 py-10 backdrop-blur-xl md:px-10 md:py-14"
-      >
+      <section className="relative overflow-hidden rounded-3xl border border-line bg-base-800/80 px-7 py-10 backdrop-blur-xl md:px-10 md:py-14">
         <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-28 left-1/3 h-72 w-72 rounded-full bg-electric/15 blur-3xl" />
         <div className="relative">
@@ -59,7 +54,7 @@ export default function OverviewPage() {
             todos os números vêm do motor de cálculo determinístico.
           </p>
         </div>
-      </motion.section>
+      </section>
 
       {/* KPIs principais */}
       {lScn || !active ? (

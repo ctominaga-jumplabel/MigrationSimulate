@@ -21,7 +21,7 @@ export function SectionHeader({
         )}
         <h1 className="text-2xl font-bold text-ink md:text-3xl">{title}</h1>
         {description && (
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-muted">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-soft">
             {description}
           </p>
         )}

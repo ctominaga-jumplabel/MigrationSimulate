@@ -37,9 +37,11 @@ const config: Config = {
         success: "#15a06b",
         warn: "#c77d0a",
         danger: "#dc2626",
-        // Texto (escuro com leve viés roxo).
+        // Texto (escuro com leve viés roxo). Hierarquia: DEFAULT (títulos) >
+        // soft (descrições/corpo legível) > muted (legendas) > faint (mais sutil).
         ink: {
           DEFAULT: "#1a1430",
+          soft: "#3c3651",
           muted: "#5b556e",
           faint: "#928da3",
         },

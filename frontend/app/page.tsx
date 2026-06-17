@@ -52,7 +52,7 @@ export default function OverviewPage() {
               Mission Control
             </span>
           </h1>
-          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-ink-muted md:text-base">
+          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-ink-soft md:text-base">
             Central executiva para simular esforço, duração, sprints e risco da
             migração da base SAS (3.198 EGPs · 54.972 arquivos) para Databricks /
             PySpark. Ajuste as alavancas e veja o impacto recalculado ao vivo —

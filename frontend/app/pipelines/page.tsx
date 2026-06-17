@@ -9,7 +9,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { fmtHoras, fmtInt } from "@/lib/format";
+import { fmtHoras, fmtInt, fmtPct } from "@/lib/format";
 import { useEgpChildren, useEgps, useMigrate, useMigrateGain, useParams } from "@/lib/hooks";
 import { useSim } from "@/lib/store";
 import type { EgpRow } from "@/lib/types";
@@ -24,7 +24,7 @@ export default function PipelinesPage() {
   const prioridades = useSim((s) => s.prioridades[cenario]);
   const setPrioridade = useSim((s) => s.setPrioridade);
   const gain = useMigrateGain();
-  const { data, isLoading } = useEgps(params);
+  const { data, isLoading } = useEgps(params, gain);
   const { data: mig } = useMigrate(params, gain);
   const migActive = mig?.[cenario];
 
@@ -125,7 +125,10 @@ export default function PipelinesPage() {
 
       <p className="text-xs text-ink-muted">
         {fmtInt(filtered.length)} de {fmtInt(egps.length)} EGPs ·{" "}
-        {fmtHoras(filtered.reduce((s, e) => s + e.horas_total, 0))} no recorte
+        {fmtHoras(filtered.reduce((s, e) => s + e.horas_total, 0))} no recorte{" "}
+        <span className="text-success">
+          → {fmtHoras(filtered.reduce((s, e) => s + e.horas_total_migrate, 0))} com Migrate
+        </span>
       </p>
 
       {isLoading ? (
@@ -189,7 +192,9 @@ function EgpCard({
   onToggle: () => void;
 }) {
   const critical = rank <= 10;
-  const jobPct = egp.horas_total > 0 ? (egp.horas_job / egp.horas_total) * 100 : 0;
+  const ganho = egp.horas_total > 0 ? (1 - egp.horas_total_migrate / egp.horas_total) * 100 : 0;
+  const manualPct = maxHoras > 0 ? (egp.horas_total / maxHoras) * 100 : 0;
+  const migPct = maxHoras > 0 ? (egp.horas_total_migrate / maxHoras) * 100 : 0;
   return (
     <Card className={`overflow-hidden p-4 ${critical ? "ring-1 ring-accent/30" : ""}`}>
       <div className="flex items-start justify-between gap-3">
@@ -199,6 +204,7 @@ function EgpCard({
             <Badge tone={categoriaTone(egp.categoria_predominante)}>
               {egp.categoria_predominante}
             </Badge>
+            <Badge tone="success">−{fmtPct(ganho, 0)}</Badge>
           </div>
           <p className="mt-1.5 truncate text-sm font-semibold text-ink" title={egp.egp_name}>
             {egp.egp_name}
@@ -207,23 +213,32 @@ function EgpCard({
         </div>
         <div className="text-right">
           <p className="num text-lg font-bold text-ink">{fmtHoras(egp.horas_total)}</p>
-          <p className="text-[11px] text-ink-faint">total</p>
+          <p className="num text-xs font-semibold text-success">
+            → {fmtHoras(egp.horas_total_migrate)}
+          </p>
+          <p className="text-[11px] text-ink-faint">total · com Migrate</p>
         </div>
       </div>
 
-      {/* barra esforço relativo */}
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06]">
+      {/* barra esforço relativo: manual (acento) com a parcela Migrate (verde) */}
+      <div className="relative mt-3 h-2 w-full overflow-hidden rounded-full bg-black/[0.06]">
         <div
-          className="h-full rounded-full bg-grad-accent"
-          style={{ width: `${maxHoras > 0 ? (egp.horas_total / maxHoras) * 100 : 0}%` }}
+          className="absolute inset-y-0 left-0 rounded-full bg-accent/30"
+          style={{ width: `${manualPct}%` }}
+        />
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-success"
+          style={{ width: `${migPct}%` }}
         />
       </div>
       <div className="mt-2 flex justify-between text-[11px] text-ink-muted">
         <span>
-          .sas <span className="num text-ink">{fmtHoras(egp.horas_sas)}</span>
+          .sas <span className="num text-ink">{fmtHoras(egp.horas_sas)}</span>{" "}
+          <span className="num text-success">→ {fmtHoras(egp.horas_sas_migrate)}</span>
         </span>
         <span>
-          Job <span className="num text-ink">{fmtHoras(egp.horas_job)}</span> ({jobPct.toFixed(0)}%)
+          Job <span className="num text-ink">{fmtHoras(egp.horas_job)}</span>{" "}
+          <span className="num text-success">→ {fmtHoras(egp.horas_job_migrate)}</span>
         </span>
       </div>
 

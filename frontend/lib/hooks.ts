@@ -68,10 +68,10 @@ export function useMigrate(p: Params, gain: Record<string, number>) {
   });
 }
 
-export function useEgps(p: Params) {
+export function useEgps(p: Params, gain: Record<string, number>) {
   return useQuery({
-    queryKey: ["egps", p.cenario, p.J_base, p.J_task],
-    queryFn: () => api.egps(p),
+    queryKey: ["egps", p.cenario, p.J_base, p.J_task, JSON.stringify(gain)],
+    queryFn: () => api.egps(p, gain),
     placeholderData: (prev) => prev,
   });
 }

@@ -35,7 +35,8 @@ export const api = {
   scenarios: (p: Params) => post<ScenariosResponse>("/api/scenarios", p),
   migrate: (p: Params, migrate_gain: Record<string, number>) =>
     post<MigrateResponse>("/api/migrate", { ...p, migrate_gain }),
-  egps: (p: Params) => post<EgpsResponse>("/api/egps", p),
+  egps: (p: Params, migrate_gain: Record<string, number>) =>
+    post<EgpsResponse>("/api/egps", { ...p, migrate_gain }),
   egpChildren: (egp_name: string) =>
     post<{ egp_name: string; children: SasChild[] }>("/api/egps/children", {
       egp_name,

@@ -105,6 +105,10 @@ export interface EgpRow {
   horas_job: number;
   horas_total: number;
   categoria_predominante: string;
+  // Esforço COM Migrate por EGP (conversão por categoria + Job ponderado).
+  horas_sas_migrate: number;
+  horas_job_migrate: number;
+  horas_total_migrate: number;
 }
 
 export interface EgpsResponse {

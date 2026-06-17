@@ -7,8 +7,8 @@ import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { fmtData, fmtDec, fmtHoras, fmtInt } from "@/lib/format";
-import { useMigrate, useMigrateGain, useParams, useSprints } from "@/lib/hooks";
+import { fmtData, fmtDec, fmtHoras, fmtInt, fmtPct } from "@/lib/format";
+import { useEgps, useMigrate, useMigrateGain, useOrphans, useParams, useSprints } from "@/lib/hooks";
 import { useSim } from "@/lib/store";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
@@ -19,12 +19,27 @@ export default function TimelinePage() {
   const gain = useMigrateGain();
   const { data, isLoading } = useSprints(params);
   const { data: mig } = useMigrate(params, gain);
+  const { data: egpsData } = useEgps(params, gain);
+  const { data: orphansData } = useOrphans(params);
   const migActive = mig?.[cenario];
   const [topN, setTopN] = useState(20);
 
   const resumo = data?.resumo_sprints ?? [];
   const aloc = data?.alocacao ?? [];
   const totalSprints = resumo.length;
+
+  // Razão de redução do Migrate por item (chave `${tipo}:${nome}`): EGP vem do
+  // esforço migrado por EGP; órfão, do ganho da sua categoria (sem Job).
+  const migRatio = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of egpsData?.egps ?? []) {
+      m.set(`egp:${e.egp_name}`, e.horas_total > 0 ? e.horas_total_migrate / e.horas_total : 1);
+    }
+    for (const o of orphansData?.orphans ?? []) {
+      m.set(`orfao:${o.file_name}`, 1 - (gain[o.categoria] ?? 0) / 100);
+    }
+    return m;
+  }, [egpsData, orphansData, gain]);
 
   const top = useMemo(
     () => aloc.slice().sort((a, b) => b.horas - a.horas).slice(0, topN),
@@ -98,6 +113,9 @@ export default function TimelinePage() {
                 1.5,
                 ((it.sprint_final - it.sprint_inicial + 1) / totalSprints) * 100
               );
+              const ratio = migRatio.get(`${it.tipo}:${it.nome}`) ?? 1;
+              const migHoras = it.horas * ratio;
+              const ganho = it.horas > 0 ? (1 - ratio) * 100 : 0;
               return (
                 <div key={`${it.tipo}:${it.nome}`} className="flex items-center gap-3">
                   <div className="w-44 shrink-0 truncate text-right text-xs text-ink-muted" title={it.nome}>
@@ -112,14 +130,20 @@ export default function TimelinePage() {
                         it.tipo === "egp" ? "bg-grad-accent" : "bg-grad-electric"
                       }`}
                       style={{ left: `${left}%` }}
-                      title={`${it.nome} · sprints ${it.sprint_inicial}–${it.sprint_final}`}
+                      title={`${it.nome} · sprints ${it.sprint_inicial}–${it.sprint_final} · manual ${fmtHoras(it.horas)} → Migrate ${fmtHoras(migHoras)}`}
                     >
                       <span className="num truncate">{fmtHoras(it.horas, 0)}</span>
                     </motion.div>
                   </div>
-                  <div className="w-20 shrink-0 text-[11px] text-ink-faint">
-                    spr {it.sprint_inicial}
-                    {it.sprint_final > it.sprint_inicial ? `–${it.sprint_final}` : ""}
+                  <div className="w-28 shrink-0 text-[11px] leading-tight text-ink-faint">
+                    <div>
+                      spr {it.sprint_inicial}
+                      {it.sprint_final > it.sprint_inicial ? `–${it.sprint_final}` : ""}
+                    </div>
+                    <div className="num text-success">
+                      → {fmtHoras(migHoras, 0)}{" "}
+                      <span className="text-ink-faint">−{fmtPct(ganho, 0)}</span>
+                    </div>
                   </div>
                 </div>
               );
@@ -132,6 +156,9 @@ export default function TimelinePage() {
             </span>
             <span className="flex items-center gap-2">
               <span className="h-3 w-5 rounded bg-grad-electric" /> Órfão
+            </span>
+            <span className="flex items-center gap-2 text-success">
+              → esforço com Migrate (por item)
             </span>
             <span className="ml-auto flex items-center gap-1.5">
               <Icon name="InfoCircle" size={14} />

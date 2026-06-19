@@ -39,10 +39,12 @@ export function fmtData(iso: string | null | undefined): string {
   return `${d}/${m}/${y}`;
 }
 
-// Anos-equivalentes de duração (apresentação): dias úteis / 252 dias úteis/ano.
-export function diasParaAnos(diasUteis: number): string {
+// Anos-equivalentes de duração (apresentação): dias úteis ÷ (dias úteis/mês × 12).
+// `diasUteisMes` default 21 (= 252 dias úteis/ano), configurável pela alavanca.
+export function diasParaAnos(diasUteis: number, diasUteisMes = 21): string {
   if (!diasUteis || !Number.isFinite(diasUteis)) return "—";
-  return fmtDec(diasUteis / 252, 1) + " anos";
+  const diasAno = (diasUteisMes || 21) * 12;
+  return fmtDec(diasUteis / diasAno, 1) + " anos";
 }
 
 // Unidades de duração do comparativo (apresentação). `field` casa com

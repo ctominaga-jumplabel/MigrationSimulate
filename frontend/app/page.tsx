@@ -20,6 +20,7 @@ import { useState } from "react";
 export default function OverviewPage() {
   const params = useParams();
   const cenario = useSim((s) => s.cenario);
+  const diasUteisMes = useSim((s) => s.dias_uteis_mes);
   const gain = useMigrateGain();
   const { data: scn, isLoading: lScn } = useScenarios(params);
   const { data: cat, isLoading: lCat } = useCatalog();
@@ -82,7 +83,7 @@ export default function OverviewPage() {
             format={(v) => fmtDec(v) + " dias"}
             accent="electric"
             icon={<Icon name="Calendar1" size={20} variant="Bold" />}
-            sub={diasParaAnos(active.duracao_dias_uteis)}
+            sub={diasParaAnos(active.duracao_dias_uteis, diasUteisMes)}
             hint="Dias úteis = esforço ÷ (nº consultores × horas/dia). Mais consultores reduzem a duração, não o esforço."
             delay={0.05}
           />

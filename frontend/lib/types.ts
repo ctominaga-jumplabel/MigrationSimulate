@@ -10,6 +10,7 @@ export interface Params {
   J_base: number;
   J_task: number;
   K: number;
+  dias_uteis_mes: number; // dias úteis/mês p/ conversão horas→meses/anos (default 21)
   data_inicio: string; // ISO yyyy-mm-dd
   cenario: Cenario;
   prioridades?: PrioridadeItem[];

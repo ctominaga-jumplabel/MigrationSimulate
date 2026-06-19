@@ -12,6 +12,7 @@ interface SimState {
   J_base: number;
   J_task: number;
   K: number;
+  dias_uteis_mes: number;
   data_inicio: string;
   cenario: Cenario;
   // Prioridades editadas por cenário (chave = `${tipo}:${nome}`).
@@ -45,6 +46,7 @@ const DEFAULTS = {
   J_base: 8,
   J_task: 2,
   K: 1.0,
+  dias_uteis_mes: 21,
   data_inicio: "2026-06-15",
   cenario: "bruto" as Cenario,
 };
@@ -98,6 +100,7 @@ export const useSim = create<SimState>((set, get) => ({
       J_base: s.J_base,
       J_task: s.J_task,
       K: s.K,
+      dias_uteis_mes: s.dias_uteis_mes,
       data_inicio: s.data_inicio,
       cenario: s.cenario,
       prioridades,

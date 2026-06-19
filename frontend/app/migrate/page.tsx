@@ -112,7 +112,7 @@ export default function MigratePage() {
             format={(v) => fmtDec(v) + " dias"}
             accent="electric"
             icon={<Icon name="Calendar1" size={20} variant="Bold" />}
-            sub={`manual: ${fmtDec(active.manual.duracao_dias_uteis)} dias · ${diasParaAnos(active.migrate.duracao_dias_uteis)}`}
+            sub={`manual: ${fmtDec(active.manual.duracao_dias_uteis)} dias · ${diasParaAnos(active.migrate.duracao_dias_uteis, s.dias_uteis_mes)}`}
             hint="Dias úteis = esforço com Migrate ÷ (nº consultores × horas/dia). Mesma fórmula do cenário manual."
             delay={0.1}
           />

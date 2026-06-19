@@ -94,7 +94,18 @@ export default function ComparisonPage() {
 
       {/* Seletor de unidade */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-ink">Duração da migração</h2>
+        <div>
+          <h2 className="text-lg font-bold text-ink">Duração da migração</h2>
+          {(unidade === "meses" || unidade === "anos") && (
+            <p className="mt-0.5 text-xs text-ink-muted">
+              Em dias úteis: 1 mês ={" "}
+              <span className="num font-semibold text-ink">
+                {fmtInt(s.dias_uteis_mes)}
+              </span>{" "}
+              dias úteis · 1 ano = 12 meses (ajuste no Scenario Builder).
+            </p>
+          )}
+        </div>
         <SegmentedControl
           size="sm"
           value={unidade}

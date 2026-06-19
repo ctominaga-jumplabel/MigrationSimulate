@@ -127,6 +127,15 @@ export default function ScenarioPage() {
               { value: 1.3, label: "1,3 · time novo" },
             ]}
           />
+          <LeverNumber
+            label="Dias úteis por mês"
+            value={s.dias_uteis_mes}
+            step={1}
+            min={1}
+            unit="dias úteis"
+            onChange={(v) => s.set({ dias_uteis_mes: v })}
+            hint="Base de dias ÚTEIS para converter horas em meses e anos no Comparativo (1 mês = N dias úteis; 1 ano = 12 meses). Default 21. Só afeta a apresentação da duração — não muda esforço nem sprints."
+          />
           <div className="space-y-2">
             <label className="text-sm font-medium text-ink">Data de início</label>
             <input

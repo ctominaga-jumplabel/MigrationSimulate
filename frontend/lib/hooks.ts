@@ -16,6 +16,7 @@ export function useParams(): Params {
   const J_base = useSim((s) => s.J_base);
   const J_task = useSim((s) => s.J_task);
   const K = useSim((s) => s.K);
+  const dias_uteis_mes = useSim((s) => s.dias_uteis_mes);
   const data_inicio = useSim((s) => s.data_inicio);
   const cenario = useSim((s) => s.cenario);
   const prioridades = useSim((s) => s.prioridades);
@@ -29,6 +30,7 @@ export function useParams(): Params {
       J_base,
       J_task,
       K,
+      dias_uteis_mes,
       data_inicio,
       cenario,
       prioridades: Object.entries(prio).map(([key, prioridade]) => {
@@ -40,7 +42,7 @@ export function useParams(): Params {
         };
       }),
     };
-  }, [n_consultores, n_colaboradores, horas_dia, J_base, J_task, K, data_inicio, cenario, prioridades]);
+  }, [n_consultores, n_colaboradores, horas_dia, J_base, J_task, K, dias_uteis_mes, data_inicio, cenario, prioridades]);
 }
 
 const key = (p: Params) => JSON.stringify(p);

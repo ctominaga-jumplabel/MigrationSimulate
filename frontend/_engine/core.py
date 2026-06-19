@@ -49,10 +49,11 @@ ROLLUP_PATH = "data/egp_rollup.parquet"
 DIAS_POR_SPRINT = 10
 
 # Conversões de duração (apresentação no comparativo): a partir de DIAS ÚTEIS.
-# 252 dias úteis/ano (padrão de mercado) e 21 dias úteis/mês (= 252 / 12), de modo
-# que ano == 12 meses de forma exata. Usados por `compute_comparison`.
+# `dias_uteis_mes` é uma alavanca (default 21 dias úteis/mês); o ano = 12 meses
+# (= dias_uteis_mes × 12, p.ex. 21 → 252 dias úteis/ano). Usado por
+# `compute_comparison`/`_duracao_breakdown`.
 DIAS_UTEIS_POR_MES = 21.0
-DIAS_UTEIS_POR_ANO = 252.0
+MESES_POR_ANO = 12.0
 
 
 # ---------------------------------------------------------------------------
@@ -729,25 +730,32 @@ def compute_migrate(
 # única conta adicional é traduzir o MESMO esforço (horas-homem, fixo) em DURAÇÃO
 # de calendário sob equipes de tamanhos diferentes (cliente × consultores).
 # ---------------------------------------------------------------------------
-def _duracao_breakdown(esforco_total: float, n_pessoas: float, horas_dia: float) -> dict:
+def _duracao_breakdown(
+    esforco_total: float,
+    n_pessoas: float,
+    horas_dia: float,
+    dias_uteis_mes: float = DIAS_UTEIS_POR_MES,
+) -> dict:
     """Traduz um esforço total (horas-homem) em duração, dado o tamanho da equipe.
 
     O esforço (horas-homem) é FIXO; o tamanho da equipe só muda a DURAÇÃO. Devolve
-    a mesma duração expressa em horas (úteis de calendário), dias úteis, meses e
+    a mesma duração expressa em horas (úteis de calendário), DIAS ÚTEIS, meses e
     anos — coerente com `_effort_metrics` (dias úteis = esforço ÷ capacidade/dia).
-    Pura: equipe nula (0 pessoas ou 0 h/dia) → durações infinitas.
+    Meses e anos consideram só DIAS ÚTEIS: 1 mês = `dias_uteis_mes` dias úteis
+    (alavanca, default 21) e 1 ano = 12 meses. Pura: equipe nula → durações infinitas.
     """
     capacidade_dia = float(n_pessoas) * float(horas_dia)
     dias = esforco_total / capacidade_dia if capacidade_dia else float("inf")
     finita = dias != float("inf")
+    dum = float(dias_uteis_mes) if dias_uteis_mes else DIAS_UTEIS_POR_MES
     return {
         "esforco_total": float(esforco_total),  # horas-homem (independe da equipe)
         "n_pessoas": int(n_pessoas),
         # Duração de calendário em horas úteis = dias úteis × h/dia (= esforço ÷ pessoas).
         "duracao_horas": float(dias * horas_dia) if finita else float("inf"),
         "duracao_dias": float(dias),
-        "duracao_meses": float(dias / DIAS_UTEIS_POR_MES) if finita else float("inf"),
-        "duracao_anos": float(dias / DIAS_UTEIS_POR_ANO) if finita else float("inf"),
+        "duracao_meses": float(dias / dum) if finita else float("inf"),
+        "duracao_anos": float(dias / (dum * MESES_POR_ANO)) if finita else float("inf"),
     }
 
 
@@ -839,6 +847,7 @@ def compute_comparison(
     n_consultores = int(params["n_consultores"])
     n_colaboradores = int(params.get("n_colaboradores", n_consultores))
     horas_dia = float(params["horas_dia"])
+    dias_uteis_mes = float(params.get("dias_uteis_mes", DIAS_UTEIS_POR_MES))
 
     out: dict = {}
     for cenario in ("bruto", "sem_dup"):
@@ -857,8 +866,12 @@ def compute_comparison(
         ganho_pct = economia / manual_eff * 100.0 if manual_eff > 0 else 0.0
 
         out[cenario] = {
-            "manual": _duracao_breakdown(manual_eff, n_colaboradores, horas_dia),
-            "migrate": _duracao_breakdown(migrate_eff, n_consultores, horas_dia),
+            "manual": _duracao_breakdown(
+                manual_eff, n_colaboradores, horas_dia, dias_uteis_mes
+            ),
+            "migrate": _duracao_breakdown(
+                migrate_eff, n_consultores, horas_dia, dias_uteis_mes
+            ),
             "economia_horas": float(economia),
             "ganho_pct": float(ganho_pct),
             "n_colaboradores": int(n_colaboradores),

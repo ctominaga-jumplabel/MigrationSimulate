@@ -34,6 +34,9 @@ class Params(BaseModel):
     J_base: float = Field(default=8.0, ge=0)
     J_task: float = Field(default=2.0, ge=0)
     K: float = Field(default=1.0, gt=0)
+    # Dias úteis por mês (comparativo: conversão horas→meses/anos). Default 21;
+    # ano = 12 meses. Só apresentação de duração — não altera esforço/sprints.
+    dias_uteis_mes: float = Field(default=21.0, gt=0, le=31)
     data_inicio: _dt.date = Field(default_factory=lambda: _dt.date(2026, 6, 15))
     cenario: Cenario = "bruto"
     prioridades: list[PrioridadeItem] = Field(default_factory=list)
@@ -47,6 +50,7 @@ class Params(BaseModel):
             "J_base": self.J_base,
             "J_task": self.J_task,
             "K": self.K,
+            "dias_uteis_mes": self.dias_uteis_mes,
             "data_inicio": self.data_inicio,
             "cenario": self.cenario,
             "cenario_export": self.cenario,

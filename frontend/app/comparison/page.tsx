@@ -132,16 +132,24 @@ export default function ComparisonPage() {
 
           <VeredictoStrip active={active} unidade={unidade} field={cfg.field} />
 
-          {/* Quantidade por complexidade: .egp e .sas */}
+          {/* Escopo por complexidade: processos (.egp) + .sas órfãos, separados */}
           <div>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-1 flex items-center justify-between">
               <h2 className="text-lg font-bold text-ink">
-                Quantidade por complexidade
+                Escopo por complexidade
               </h2>
               <Badge tone={s.cenario === "bruto" ? "accent" : "electric"}>
                 {s.cenario === "bruto" ? "Com duplicados" : "Sem duplicados"}
               </Badge>
             </div>
+            <p className="mb-3 text-xs text-ink-muted">
+              Quantidade e esforço (×K {s.K}) por complexidade — processos{" "}
+              <span className="font-semibold text-ink">.egp</span> (conversão dos
+              seus .sas + overhead de Job) e arquivos{" "}
+              <span className="font-semibold text-ink">.sas órfãos</span> (fora de
+              qualquer .egp), separados e somáveis: juntos formam o esforço manual
+              do cenário.
+            </p>
             <ComplexidadeTable rows={active.complexidade} />
           </div>
         </>
@@ -299,76 +307,90 @@ function StripCell({
   );
 }
 
-/** Tabela de contagem por complexidade: processos (.egp) e arquivos (.sas). */
+/** Escopo por complexidade: processos (.egp) e .sas órfãos — qtd + esforço. */
 function ComplexidadeTable({
   rows,
 }: {
   rows: ComparisonScenario["complexidade"];
 }) {
   const totEgp = rows.reduce((a, r) => a + r.n_egp, 0);
-  const totSas = rows.reduce((a, r) => a + r.n_sas, 0);
-  const maxEgp = Math.max(1, ...rows.map((r) => r.n_egp));
-  const maxSas = Math.max(1, ...rows.map((r) => r.n_sas));
+  const totHEgp = rows.reduce((a, r) => a + r.horas_egp, 0);
+  const totOrf = rows.reduce((a, r) => a + r.n_orfao, 0);
+  const totHOrf = rows.reduce((a, r) => a + r.horas_orfao, 0);
+  // Barras proporcionais ao ESFORÇO (a magnitude que importa no comparativo).
+  const maxH = Math.max(1, ...rows.map((r) => Math.max(r.horas_egp, r.horas_orfao)));
 
   return (
     <Card className="overflow-hidden p-0">
-      <div className="grid grid-cols-[1.2fr_1fr_1fr] items-center">
-        <div className="border-b border-line px-5 py-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">
-          Complexidade
-        </div>
-        <div className="border-b border-l border-line px-5 py-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">
-          <span className="flex items-center gap-1.5">
-            <Icon name="Hierarchy" size={14} /> Processos (.egp)
-          </span>
-        </div>
-        <div className="border-b border-l border-line px-5 py-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">
-          <span className="flex items-center gap-1.5">
-            <Icon name="Code" size={14} /> Arquivos (.sas)
-          </span>
-        </div>
+      <div className="overflow-x-auto">
+        <div className="grid min-w-[560px] grid-cols-[1.1fr_1.3fr_1.3fr] items-center">
+          <div className="border-b border-line px-5 py-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+            Complexidade
+          </div>
+          <div className="border-b border-l border-line px-5 py-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+            <span className="flex items-center gap-1.5">
+              <Icon name="Hierarchy" size={14} /> Processos (.egp)
+            </span>
+          </div>
+          <div className="border-b border-l border-line px-5 py-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+            <span className="flex items-center gap-1.5">
+              <Icon name="DocumentText" size={14} /> .sas órfãos
+            </span>
+          </div>
 
-        {rows.map((r, i) => (
-          <motion.div
-            key={r.categoria}
-            className="contents"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <div className="border-b border-line px-5 py-3">
-              <Badge tone={categoriaTone(r.categoria)}>{r.categoria}</Badge>
-            </div>
-            <CountCell value={r.n_egp} pct={(r.n_egp / maxEgp) * 100} barClass="bg-accent" />
-            <CountCell value={r.n_sas} pct={(r.n_sas / maxSas) * 100} barClass="bg-electric" />
-          </motion.div>
-        ))}
+          {rows.map((r, i) => (
+            <motion.div
+              key={r.categoria}
+              className="contents"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <div className="border-b border-line px-5 py-3">
+                <Badge tone={categoriaTone(r.categoria)}>{r.categoria}</Badge>
+              </div>
+              <MetricCell
+                qtd={r.n_egp}
+                horas={r.horas_egp}
+                pct={(r.horas_egp / maxH) * 100}
+                barClass="bg-accent"
+              />
+              <MetricCell
+                qtd={r.n_orfao}
+                horas={r.horas_orfao}
+                pct={(r.horas_orfao / maxH) * 100}
+                barClass="bg-electric"
+              />
+            </motion.div>
+          ))}
 
-        {/* Totais */}
-        <div className="px-5 py-3 text-sm font-bold text-ink">Total</div>
-        <div className="num border-l border-line px-5 py-3 text-sm font-bold text-ink">
-          {fmtInt(totEgp)}
-        </div>
-        <div className="num border-l border-line px-5 py-3 text-sm font-bold text-ink">
-          {fmtInt(totSas)}
+          {/* Totais */}
+          <div className="px-5 py-3 text-sm font-bold text-ink">Total</div>
+          <TotalCell qtd={totEgp} horas={totHEgp} />
+          <TotalCell qtd={totOrf} horas={totHOrf} />
         </div>
       </div>
     </Card>
   );
 }
 
-function CountCell({
-  value,
+/** Célula com quantidade (destaque), esforço em horas e barra por esforço. */
+function MetricCell({
+  qtd,
+  horas,
   pct,
   barClass,
 }: {
-  value: number;
+  qtd: number;
+  horas: number;
   pct: number;
   barClass: string;
 }) {
   return (
     <div className="border-b border-l border-line px-5 py-3">
-      <div className="flex items-center justify-between">
-        <span className="num text-sm font-semibold text-ink">{fmtInt(value)}</span>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="num text-sm font-semibold text-ink">{fmtInt(qtd)} un</span>
+        <span className="num text-xs text-ink-muted">{fmtHoras(horas)}</span>
       </div>
       <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/[0.06]">
         <motion.div
@@ -377,6 +399,19 @@ function CountCell({
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className={`h-full rounded-full ${barClass}`}
         />
+      </div>
+    </div>
+  );
+}
+
+function TotalCell({ qtd, horas }: { qtd: number; horas: number }) {
+  return (
+    <div className="border-l border-line px-5 py-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="num text-sm font-bold text-ink">{fmtInt(qtd)} un</span>
+        <span className="num text-xs font-semibold text-ink-muted">
+          {fmtHoras(horas)}
+        </span>
       </div>
     </div>
   );

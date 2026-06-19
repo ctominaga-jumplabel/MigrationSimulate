@@ -751,15 +751,62 @@ def _duracao_breakdown(esforco_total: float, n_pessoas: float, horas_dia: float)
     }
 
 
-def _egp_categoria_counts(rollup_df: pd.DataFrame, cenario: str) -> dict:
-    """Contagem de EGPs por `categoria_predominante`, para um cenário.
+def _complexidade_breakdown(
+    dataset_df: pd.DataFrame,
+    rollup_df: pd.DataFrame,
+    params: dict,
+    cenario: str,
+) -> list[dict]:
+    """Escopo por complexidade: processos (.egp) e `.sas` ÓRFÃOS, SEPARADOS.
 
-    "bruto" = todos os EGPs do rollup; "sem_dup" = apenas os EGPs canônicos por
-    família (`canonical_rollup`), espelhando a definição oficial de Sem-dup. Pura.
+    Decompõe o esforço MANUAL do cenário em duas parcelas disjuntas e somáveis
+    (quantidade + esforço, com K já aplicado):
+
+        - .egp (processo): por `categoria_predominante`. Esforço do EGP = conversão
+          dos seus `.sas` + overhead de Job (J_base + J_task × n_sas). "sem_dup"
+          usa só os EGPs canônicos por família e as colunas `*_sem_dup`.
+        - .sas ÓRFÃO: arquivos `.sas` que NÃO pertencem a nenhum EGP, por
+          `categoria` própria (sem overhead de Job). "sem_dup" = só não-duplicatas.
+
+    Reconciliação: Σ(esforço .egp + esforço órfãos) == esforço manual do cenário
+    (`_effort_metrics(horas_sas + horas_orfaos, horas_job)`× já dentro do K). Pura.
     """
-    src = canonical_rollup(rollup_df) if cenario == "sem_dup" else rollup_df
-    counts = src.groupby("categoria_predominante", dropna=False).size()
-    return {str(cat): int(n) for cat, n in counts.items()}
+    K = float(params["K"])
+    is_sd = cenario == "sem_dup"
+
+    # --- Processos (.egp), por categoria predominante ---------------------
+    src = canonical_rollup(rollup_df) if is_sd else rollup_df
+    horas_col = "soma_horas_sas_sem_dup" if is_sd else "soma_horas_sas"
+    n_col = "n_sas_sem_dup" if is_sd else "n_sas"
+    egp = pd.DataFrame(
+        {
+            "categoria": src["categoria_predominante"].to_numpy(),
+            "horas": src[horas_col].astype(float).to_numpy()
+            + job_overhead(src[n_col], params).astype(float).to_numpy(),
+        }
+    )
+    egp_g = egp.groupby("categoria", dropna=False).agg(
+        n=("horas", "size"), horas=("horas", "sum")
+    )
+
+    # --- .sas órfãos, por categoria própria (sem Job) ---------------------
+    orph = orphan_table(dataset_df, cenario)  # file_name, categoria, horas_estimadas
+    orph_g = orph.groupby("categoria", dropna=False).agg(
+        n=("horas_estimadas", "size"), horas=("horas_estimadas", "sum")
+    )
+
+    rows: list[dict] = []
+    for cat in CATEGORIA_ORDER:
+        rows.append(
+            {
+                "categoria": cat,
+                "n_egp": int(egp_g["n"].get(cat, 0)),
+                "horas_egp": float(egp_g["horas"].get(cat, 0.0)) * K,
+                "n_orfao": int(orph_g["n"].get(cat, 0)),
+                "horas_orfao": float(orph_g["horas"].get(cat, 0.0)) * K,
+            }
+        )
+    return rows
 
 
 def compute_comparison(
@@ -794,20 +841,10 @@ def compute_comparison(
         manual_eff = float(m["manual"]["esforco_total"])
         migrate_eff = float(m["migrate"]["esforco_total"])
 
-        # Quantidade por complexidade: .sas (por categoria) e .egp (por predominante).
-        sas_counts = categoria_breakdown(dataset_df, rollup_df, cenario)
-        sas_by_cat = {
-            str(r["categoria"]): int(r["n_sas"]) for _, r in sas_counts.iterrows()
-        }
-        egp_by_cat = _egp_categoria_counts(rollup_df, cenario)
-        complexidade = [
-            {
-                "categoria": cat,
-                "n_egp": int(egp_by_cat.get(cat, 0)),
-                "n_sas": int(sas_by_cat.get(cat, 0)),
-            }
-            for cat in CATEGORIA_ORDER
-        ]
+        # Escopo por complexidade: processos (.egp, por categoria predominante) e
+        # .sas ÓRFÃOS (por categoria), com quantidade E esforço (×K). Disjuntos e
+        # somáveis: Σ(esforço .egp + esforço órfãos) == esforço manual do cenário.
+        complexidade = _complexidade_breakdown(dataset_df, rollup_df, params, cenario)
 
         economia = manual_eff - migrate_eff
         ganho_pct = economia / manual_eff * 100.0 if manual_eff > 0 else 0.0

@@ -114,7 +114,9 @@ export interface DuracaoBreakdown {
 export interface ComplexidadeRow {
   categoria: string;
   n_egp: number; // processos (.egp) com esta categoria predominante
-  n_sas: number; // arquivos .sas desta categoria
+  horas_egp: number; // esforço dos .egp (conversão + Job), ×K
+  n_orfao: number; // .sas ÓRFÃOS (fora de qualquer .egp) desta categoria
+  horas_orfao: number; // esforço dos .sas órfãos (conversão), ×K
 }
 
 export interface ComparisonScenario {

@@ -756,43 +756,45 @@ def _complexidade_breakdown(
     rollup_df: pd.DataFrame,
     params: dict,
     cenario: str,
+    gain: dict,
 ) -> list[dict]:
     """Escopo por complexidade: processos (.egp) e `.sas` ÓRFÃOS, SEPARADOS.
 
-    Decompõe o esforço MANUAL do cenário em duas parcelas disjuntas e somáveis
-    (quantidade + esforço, com K já aplicado):
+    Decompõe o esforço do cenário em duas parcelas disjuntas e somáveis
+    (quantidade + esforço MANUAL e esforço COM MIGRATE, com K já aplicado):
 
         - .egp (processo): por `categoria_predominante`. Esforço do EGP = conversão
-          dos seus `.sas` + overhead de Job (J_base + J_task × n_sas). "sem_dup"
-          usa só os EGPs canônicos por família e as colunas `*_sem_dup`.
+          dos seus `.sas` + overhead de Job (J_base + J_task × n_sas); a versão
+          Migrate reduz conversão (por categoria do .sas) e Job (ponderado pela
+          complexidade) — agregada de `egp_migrate_table`. "sem_dup" usa só os EGPs
+          canônicos por família.
         - .sas ÓRFÃO: arquivos `.sas` que NÃO pertencem a nenhum EGP, por
-          `categoria` própria (sem overhead de Job). "sem_dup" = só não-duplicatas.
+          `categoria` própria (sem Job); Migrate reduz pela % da categoria.
+          "sem_dup" = só não-duplicatas.
 
-    Reconciliação: Σ(esforço .egp + esforço órfãos) == esforço manual do cenário
-    (`_effort_metrics(horas_sas + horas_orfaos, horas_job)`× já dentro do K). Pura.
+    Reconciliação: Σ esforço manual (.egp + órfãos) == esforço manual do cenário;
+    Σ esforço Migrate (.egp + órfãos) == esforço com Migrate do cenário. Pura.
     """
     K = float(params["K"])
-    is_sd = cenario == "sem_dup"
 
-    # --- Processos (.egp), por categoria predominante ---------------------
-    src = canonical_rollup(rollup_df) if is_sd else rollup_df
-    horas_col = "soma_horas_sas_sem_dup" if is_sd else "soma_horas_sas"
-    n_col = "n_sas_sem_dup" if is_sd else "n_sas"
-    egp = pd.DataFrame(
-        {
-            "categoria": src["categoria_predominante"].to_numpy(),
-            "horas": src[horas_col].astype(float).to_numpy()
-            + job_overhead(src[n_col], params).astype(float).to_numpy(),
-        }
-    )
-    egp_g = egp.groupby("categoria", dropna=False).agg(
-        n=("horas", "size"), horas=("horas", "sum")
+    # --- Processos (.egp): manual + Migrate, por categoria predominante ----
+    egp_tbl = egp_migrate_table(dataset_df, rollup_df, params, cenario, gain_map=gain)
+    egp_g = egp_tbl.groupby("categoria_predominante", dropna=False).agg(
+        n=("horas_total", "size"),
+        horas=("horas_total", "sum"),
+        horas_migrate=("horas_total_migrate", "sum"),
     )
 
-    # --- .sas órfãos, por categoria própria (sem Job) ---------------------
+    # --- .sas órfãos: manual + Migrate, por categoria própria (sem Job) ----
     orph = orphan_table(dataset_df, cenario)  # file_name, categoria, horas_estimadas
+    g_orf = orph["categoria"].map(lambda c: float(gain.get(c, 0.0)))
+    orph = orph.assign(
+        horas_migrate=orph["horas_estimadas"].astype(float) * (1.0 - g_orf / 100.0)
+    )
     orph_g = orph.groupby("categoria", dropna=False).agg(
-        n=("horas_estimadas", "size"), horas=("horas_estimadas", "sum")
+        n=("horas_estimadas", "size"),
+        horas=("horas_estimadas", "sum"),
+        horas_migrate=("horas_migrate", "sum"),
     )
 
     rows: list[dict] = []
@@ -802,8 +804,10 @@ def _complexidade_breakdown(
                 "categoria": cat,
                 "n_egp": int(egp_g["n"].get(cat, 0)),
                 "horas_egp": float(egp_g["horas"].get(cat, 0.0)) * K,
+                "horas_egp_migrate": float(egp_g["horas_migrate"].get(cat, 0.0)) * K,
                 "n_orfao": int(orph_g["n"].get(cat, 0)),
                 "horas_orfao": float(orph_g["horas"].get(cat, 0.0)) * K,
+                "horas_orfao_migrate": float(orph_g["horas_migrate"].get(cat, 0.0)) * K,
             }
         )
     return rows
@@ -830,6 +834,7 @@ def compute_comparison(
     `categoria_predominante`, `.sas` por `categoria` (reconciliável com
     `categoria_breakdown`). Retorna `{"bruto": {...}, "sem_dup": {...}}`. Pura.
     """
+    gain = _merge_gain(gain_map)
     mig = compute_migrate(dataset_df, rollup_df, params, gain_map=gain_map)
     n_consultores = int(params["n_consultores"])
     n_colaboradores = int(params.get("n_colaboradores", n_consultores))
@@ -844,7 +849,9 @@ def compute_comparison(
         # Escopo por complexidade: processos (.egp, por categoria predominante) e
         # .sas ÓRFÃOS (por categoria), com quantidade E esforço (×K). Disjuntos e
         # somáveis: Σ(esforço .egp + esforço órfãos) == esforço manual do cenário.
-        complexidade = _complexidade_breakdown(dataset_df, rollup_df, params, cenario)
+        complexidade = _complexidade_breakdown(
+            dataset_df, rollup_df, params, cenario, gain
+        )
 
         economia = manual_eff - migrate_eff
         ganho_pct = economia / manual_eff * 100.0 if manual_eff > 0 else 0.0

@@ -152,6 +152,15 @@ export default function ComparisonPage() {
             </p>
             <ComplexidadeTable rows={active.complexidade} />
           </div>
+
+          {/* Comparativo de tempo por complexidade: manual ÷ colaboradores ×
+              Migrate ÷ consultores, separando .egp e .sas órfãos, com totalizador
+              selecionável por complexidade. */}
+          <ComplexidadeComparativo
+            rows={active.complexidade}
+            nColab={active.n_colaboradores}
+            nCons={active.n_consultores}
+          />
         </>
       )}
     </div>
@@ -413,6 +422,217 @@ function TotalCell({ qtd, horas }: { qtd: number; horas: number }) {
           {fmtHoras(horas)}
         </span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Comparativo de TEMPO por complexidade: esforço manual ÷ nº de colaboradores do
+ * cliente × esforço com Migrate ÷ nº de consultores, separando .egp e .sas órfãos.
+ * Checkbox por complexidade alimenta o totalizador de horas (linhas selecionadas).
+ */
+function ComplexidadeComparativo({
+  rows,
+  nColab,
+  nCons,
+}: {
+  rows: ComparisonScenario["complexidade"];
+  nColab: number;
+  nCons: number;
+}) {
+  const [sel, setSel] = useState<Set<string>>(
+    () => new Set(rows.map((r) => r.categoria))
+  );
+  const toggle = (cat: string) =>
+    setSel((prev) => {
+      const n = new Set(prev);
+      if (n.has(cat)) n.delete(cat);
+      else n.add(cat);
+      return n;
+    });
+  const allOn = sel.size === rows.length;
+  const toggleAll = () =>
+    setSel(allOn ? new Set() : new Set(rows.map((r) => r.categoria)));
+
+  // Tempo = esforço ÷ nº de pessoas (manual: colaboradores; Migrate: consultores).
+  const colab = Math.max(1, nColab);
+  const cons = Math.max(1, nCons);
+  const selRows = rows.filter((r) => sel.has(r.categoria));
+  const totManual =
+    selRows.reduce((a, r) => a + r.horas_egp + r.horas_orfao, 0) / colab;
+  const totMigrate =
+    selRows.reduce((a, r) => a + r.horas_egp_migrate + r.horas_orfao_migrate, 0) /
+    cons;
+  const economia = totManual - totMigrate;
+  const ganhoPct = totManual > 0 ? (economia / totManual) * 100 : 0;
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-ink">Tempo por complexidade</h2>
+        <button
+          onClick={toggleAll}
+          className="rounded-lg border border-line bg-black/[0.04] px-2.5 py-1 text-xs font-medium text-ink-muted transition-colors hover:text-ink"
+        >
+          {allOn ? "Limpar seleção" : "Selecionar tudo"}
+        </button>
+      </div>
+      <p className="mb-3 text-xs text-ink-muted">
+        Tempo de desenvolvimento = esforço ÷ equipe. Manual ÷{" "}
+        <span className="num font-semibold text-ink">{fmtInt(nColab)}</span>{" "}
+        colaboradores do cliente · Migrate ÷{" "}
+        <span className="num font-semibold text-ink">{fmtInt(nCons)}</span>{" "}
+        consultores. Marque as complexidades para somar no totalizador.
+      </p>
+
+      <Card className="overflow-hidden p-0">
+        <div className="overflow-x-auto">
+          <div className="grid min-w-[680px] grid-cols-[1.4fr_1fr_1fr_1fr_1fr] items-center">
+            {/* Cabeçalho */}
+            <div className="border-b border-line px-4 py-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+              Complexidade
+            </div>
+            <HeadCell icon="Hierarchy" titulo=".egp" sub="manual" />
+            <HeadCell icon="Hierarchy" titulo=".egp" sub="Migrate" migrate />
+            <HeadCell icon="DocumentText" titulo="órfão" sub="manual" />
+            <HeadCell icon="DocumentText" titulo="órfão" sub="Migrate" migrate />
+
+            {/* Linhas por complexidade */}
+            {rows.map((r, i) => {
+              const on = sel.has(r.categoria);
+              return (
+                <motion.div
+                  key={r.categoria}
+                  className="contents"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.04 }}
+                >
+                  <button
+                    onClick={() => toggle(r.categoria)}
+                    className={`flex items-center gap-2.5 border-b border-line px-4 py-3 text-left transition-opacity ${
+                      on ? "" : "opacity-45"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors ${
+                        on
+                          ? "border-accent bg-accent text-white"
+                          : "border-line bg-black/[0.04]"
+                      }`}
+                    >
+                      {on && <Icon name="TickSquare" size={12} variant="Bold" />}
+                    </span>
+                    <Badge tone={categoriaTone(r.categoria)}>{r.categoria}</Badge>
+                  </button>
+                  <TimeCell horas={r.horas_egp / colab} dim={!on} />
+                  <TimeCell horas={r.horas_egp_migrate / cons} dim={!on} migrate />
+                  <TimeCell horas={r.horas_orfao / colab} dim={!on} />
+                  <TimeCell horas={r.horas_orfao_migrate / cons} dim={!on} migrate />
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Totalizador das complexidades selecionadas */}
+        <div className="grid gap-px bg-line sm:grid-cols-3">
+          <TotalizadorCell
+            label={`Manual · ${sel.size}/${rows.length} complexidades`}
+            value={fmtHoras(totManual)}
+            sub={`÷ ${fmtInt(nColab)} colaboradores`}
+          />
+          <TotalizadorCell
+            label="Com Migrate"
+            value={fmtHoras(totMigrate)}
+            sub={`÷ ${fmtInt(nCons)} consultores`}
+            migrate
+          />
+          <TotalizadorCell
+            label="Economia de tempo"
+            value={`−${fmtHoras(Math.max(0, economia))}`}
+            sub={`${fmtPct(ganhoPct, 1)} mais rápido`}
+            tone="success"
+          />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function HeadCell({
+  icon,
+  titulo,
+  sub,
+  migrate,
+}: {
+  icon: string;
+  titulo: string;
+  sub: string;
+  migrate?: boolean;
+}) {
+  return (
+    <div className="border-b border-l border-line px-4 py-3">
+      <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+        <Icon name={icon} size={13} /> {titulo}
+      </span>
+      <span
+        className={`text-[10px] font-semibold uppercase tracking-wide ${
+          migrate ? "text-success" : "text-ink-muted"
+        }`}
+      >
+        {sub}
+      </span>
+    </div>
+  );
+}
+
+function TimeCell({
+  horas,
+  dim,
+  migrate,
+}: {
+  horas: number;
+  dim?: boolean;
+  migrate?: boolean;
+}) {
+  return (
+    <div
+      className={`border-b border-l border-line px-4 py-3 transition-opacity ${
+        dim ? "opacity-45" : ""
+      }`}
+    >
+      <span
+        className={`num text-sm font-semibold ${
+          migrate ? "text-success" : "text-ink"
+        }`}
+      >
+        {fmtHoras(horas)}
+      </span>
+    </div>
+  );
+}
+
+function TotalizadorCell({
+  label,
+  value,
+  sub,
+  migrate,
+  tone,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  migrate?: boolean;
+  tone?: "success";
+}) {
+  const color =
+    tone === "success" || migrate ? "text-success" : "text-ink";
+  return (
+    <div className="bg-base-800 px-5 py-4">
+      <p className="text-[11px] uppercase tracking-wide text-ink-faint">{label}</p>
+      <p className={`num mt-1 text-xl font-bold ${color}`}>{value}</p>
+      <p className="num mt-0.5 text-xs text-ink-muted">{sub}</p>
     </div>
   );
 }

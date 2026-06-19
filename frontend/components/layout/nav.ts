@@ -17,6 +17,7 @@ export const NAV: NavItem[] = [
   { href: "/", label: "Overview", icon: "Chart2", group: "principal" },
   { href: "/scenario", label: "Scenario Builder", icon: "Setting4", group: "principal" },
   { href: "/migrate", label: "Tempo de Desenvolvimento", icon: "MagicStar", group: "migrate" },
+  { href: "/comparison", label: "Comparativo", icon: "ArrangeHorizontal", group: "migrate" },
   { href: "/migrate/config", label: "Calibrar Migrate", icon: "Setting2", group: "migrate" },
   { href: "/pipelines", label: "Pipelines", icon: "Hierarchy", group: "planejamento" },
   { href: "/orphans", label: "SAS Órfãos", icon: "DocumentText", group: "planejamento" },

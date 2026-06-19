@@ -44,3 +44,28 @@ export function diasParaAnos(diasUteis: number): string {
   if (!diasUteis || !Number.isFinite(diasUteis)) return "—";
   return fmtDec(diasUteis / 252, 1) + " anos";
 }
+
+// Unidades de duração do comparativo (apresentação). `field` casa com
+// DuracaoBreakdown; `dec` define a precisão e `sufixo` o rótulo da unidade.
+export type DuracaoUnidade = "horas" | "dias" | "meses" | "anos";
+
+export const DURACAO_UNIDADES: {
+  value: DuracaoUnidade;
+  label: string;
+  field: "duracao_horas" | "duracao_dias" | "duracao_meses" | "duracao_anos";
+  sufixo: string;
+  dec: number;
+}[] = [
+  { value: "horas", label: "Horas", field: "duracao_horas", sufixo: "h", dec: 0 },
+  { value: "dias", label: "Dias", field: "duracao_dias", sufixo: "dias úteis", dec: 1 },
+  { value: "meses", label: "Meses", field: "duracao_meses", sufixo: "meses", dec: 1 },
+  { value: "anos", label: "Anos", field: "duracao_anos", sufixo: "anos", dec: 1 },
+];
+
+/** Formata um valor de duração na unidade dada (com o sufixo). */
+export function fmtDuracao(v: number | null | undefined, u: DuracaoUnidade): string {
+  const cfg = DURACAO_UNIDADES.find((x) => x.value === u)!;
+  if (v === null || v === undefined || !Number.isFinite(v)) return "—";
+  const num = cfg.dec === 0 ? fmtInt(v) : fmtDec(v, cfg.dec);
+  return `${num} ${cfg.sufixo}`;
+}

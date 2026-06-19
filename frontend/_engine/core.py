@@ -48,6 +48,12 @@ ROLLUP_PATH = "data/egp_rollup.parquet"
 # Dias úteis por sprint (IDEACAO §4 / AIOS §12).
 DIAS_POR_SPRINT = 10
 
+# Conversões de duração (apresentação no comparativo): a partir de DIAS ÚTEIS.
+# 252 dias úteis/ano (padrão de mercado) e 21 dias úteis/mês (= 252 / 12), de modo
+# que ano == 12 meses de forma exata. Usados por `compute_comparison`.
+DIAS_UTEIS_POR_MES = 21.0
+DIAS_UTEIS_POR_ANO = 252.0
+
 
 # ---------------------------------------------------------------------------
 # Carregamento dos parquet (read-only). O cache (st.cache_data) fica em app.py.
@@ -711,6 +717,111 @@ def compute_migrate(
             "n_egps": int(manual["n_egps"]),
             "n_orfaos": int(manual["n_orfaos"]),
             "por_categoria": por_categoria,
+        }
+
+    return out
+
+
+# ---------------------------------------------------------------------------
+# COMPARATIVO POR COMPLEXIDADE (tela "Comparativo"): migração MANUAL pelo cliente
+# (nº de COLABORADORES do cliente) × migração com a ferramenta MIGRATE conduzida
+# pelos CONSULTORES. Sem cálculo novo de esforço — reaproveita compute_migrate; a
+# única conta adicional é traduzir o MESMO esforço (horas-homem, fixo) em DURAÇÃO
+# de calendário sob equipes de tamanhos diferentes (cliente × consultores).
+# ---------------------------------------------------------------------------
+def _duracao_breakdown(esforco_total: float, n_pessoas: float, horas_dia: float) -> dict:
+    """Traduz um esforço total (horas-homem) em duração, dado o tamanho da equipe.
+
+    O esforço (horas-homem) é FIXO; o tamanho da equipe só muda a DURAÇÃO. Devolve
+    a mesma duração expressa em horas (úteis de calendário), dias úteis, meses e
+    anos — coerente com `_effort_metrics` (dias úteis = esforço ÷ capacidade/dia).
+    Pura: equipe nula (0 pessoas ou 0 h/dia) → durações infinitas.
+    """
+    capacidade_dia = float(n_pessoas) * float(horas_dia)
+    dias = esforco_total / capacidade_dia if capacidade_dia else float("inf")
+    finita = dias != float("inf")
+    return {
+        "esforco_total": float(esforco_total),  # horas-homem (independe da equipe)
+        "n_pessoas": int(n_pessoas),
+        # Duração de calendário em horas úteis = dias úteis × h/dia (= esforço ÷ pessoas).
+        "duracao_horas": float(dias * horas_dia) if finita else float("inf"),
+        "duracao_dias": float(dias),
+        "duracao_meses": float(dias / DIAS_UTEIS_POR_MES) if finita else float("inf"),
+        "duracao_anos": float(dias / DIAS_UTEIS_POR_ANO) if finita else float("inf"),
+    }
+
+
+def _egp_categoria_counts(rollup_df: pd.DataFrame, cenario: str) -> dict:
+    """Contagem de EGPs por `categoria_predominante`, para um cenário.
+
+    "bruto" = todos os EGPs do rollup; "sem_dup" = apenas os EGPs canônicos por
+    família (`canonical_rollup`), espelhando a definição oficial de Sem-dup. Pura.
+    """
+    src = canonical_rollup(rollup_df) if cenario == "sem_dup" else rollup_df
+    counts = src.groupby("categoria_predominante", dropna=False).size()
+    return {str(cat): int(n) for cat, n in counts.items()}
+
+
+def compute_comparison(
+    dataset_df: pd.DataFrame,
+    rollup_df: pd.DataFrame,
+    params: dict,
+    gain_map: dict | None = None,
+) -> dict:
+    """Comparativo por complexidade: cliente (manual) × consultores (com Migrate).
+
+    Reaproveita `compute_migrate` (esforço manual e esforço com Migrate, ambos já
+    com K) e apenas traduz cada esforço em DURAÇÃO sob equipes distintas:
+
+        - MANUAL: conduzida pelo CLIENTE com `n_colaboradores` pessoas.
+        - MIGRATE: conduzida pelos CONSULTORES com `n_consultores` pessoas.
+
+    `params["n_colaboradores"]` (nº de colaboradores do cliente); se ausente, cai
+    para `n_consultores`. Cada lado traz a duração em horas/dias/meses/anos
+    (`_duracao_breakdown`). A `complexidade` lista, por categoria, a quantidade
+    TOTAL de processos (.egp) e de arquivos (.sas) do cenário — `.egp` por
+    `categoria_predominante`, `.sas` por `categoria` (reconciliável com
+    `categoria_breakdown`). Retorna `{"bruto": {...}, "sem_dup": {...}}`. Pura.
+    """
+    mig = compute_migrate(dataset_df, rollup_df, params, gain_map=gain_map)
+    n_consultores = int(params["n_consultores"])
+    n_colaboradores = int(params.get("n_colaboradores", n_consultores))
+    horas_dia = float(params["horas_dia"])
+
+    out: dict = {}
+    for cenario in ("bruto", "sem_dup"):
+        m = mig[cenario]
+        manual_eff = float(m["manual"]["esforco_total"])
+        migrate_eff = float(m["migrate"]["esforco_total"])
+
+        # Quantidade por complexidade: .sas (por categoria) e .egp (por predominante).
+        sas_counts = categoria_breakdown(dataset_df, rollup_df, cenario)
+        sas_by_cat = {
+            str(r["categoria"]): int(r["n_sas"]) for _, r in sas_counts.iterrows()
+        }
+        egp_by_cat = _egp_categoria_counts(rollup_df, cenario)
+        complexidade = [
+            {
+                "categoria": cat,
+                "n_egp": int(egp_by_cat.get(cat, 0)),
+                "n_sas": int(sas_by_cat.get(cat, 0)),
+            }
+            for cat in CATEGORIA_ORDER
+        ]
+
+        economia = manual_eff - migrate_eff
+        ganho_pct = economia / manual_eff * 100.0 if manual_eff > 0 else 0.0
+
+        out[cenario] = {
+            "manual": _duracao_breakdown(manual_eff, n_colaboradores, horas_dia),
+            "migrate": _duracao_breakdown(migrate_eff, n_consultores, horas_dia),
+            "economia_horas": float(economia),
+            "ganho_pct": float(ganho_pct),
+            "n_colaboradores": int(n_colaboradores),
+            "n_consultores": int(n_consultores),
+            "n_egps": int(m["n_egps"]),
+            "n_orfaos": int(m["n_orfaos"]),
+            "complexidade": complexidade,
         }
 
     return out

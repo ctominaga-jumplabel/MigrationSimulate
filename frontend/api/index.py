@@ -110,6 +110,14 @@ def migrate(req: MigrateRequest) -> dict:
     return deep_clean({"bruto": result["bruto"], "sem_dup": result["sem_dup"]})
 
 
+@api_app.post("/api/comparison")
+def comparison(req: MigrateRequest) -> dict:
+    result = core.compute_comparison(
+        DATASET_DF, ROLLUP_DF, req.core_params(), gain_map=req.core_gain()
+    )
+    return deep_clean({"bruto": result["bruto"], "sem_dup": result["sem_dup"]})
+
+
 @api_app.post("/api/scenarios")
 def scenarios(params: Params) -> dict:
     result = core.compute_scenarios(

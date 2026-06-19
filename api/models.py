@@ -27,6 +27,9 @@ class Params(BaseModel):
     """Alavancas da simulação (IDEACAO §4). Defaults = números oficiais da v1."""
 
     n_consultores: int = Field(default=5, ge=1, le=200)
+    # Colaboradores do CLIENTE (equipe que faria a migração MANUAL). Usado pelo
+    # comparativo por complexidade; até 200 pessoas. Default = nº de consultores.
+    n_colaboradores: int = Field(default=5, ge=1, le=200)
     horas_dia: float = Field(default=6.0, gt=0, le=24)
     J_base: float = Field(default=8.0, ge=0)
     J_task: float = Field(default=2.0, ge=0)
@@ -39,6 +42,7 @@ class Params(BaseModel):
         """Converte para o dict `params` que o `core` consome."""
         return {
             "n_consultores": self.n_consultores,
+            "n_colaboradores": self.n_colaboradores,
             "horas_dia": self.horas_dia,
             "J_base": self.J_base,
             "J_task": self.J_task,

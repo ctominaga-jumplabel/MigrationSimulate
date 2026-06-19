@@ -7,6 +7,7 @@ import type { Cenario, Params, PrioridadeItem } from "./types";
 
 interface SimState {
   n_consultores: number;
+  n_colaboradores: number;
   horas_dia: number;
   J_base: number;
   J_task: number;
@@ -39,6 +40,7 @@ export const MIGRATE_GAIN_DEFAULTS: Record<string, number> = {
 
 const DEFAULTS = {
   n_consultores: 5,
+  n_colaboradores: 50,
   horas_dia: 6,
   J_base: 8,
   J_task: 2,
@@ -91,6 +93,7 @@ export const useSim = create<SimState>((set, get) => ({
     );
     return {
       n_consultores: s.n_consultores,
+      n_colaboradores: s.n_colaboradores,
       horas_dia: s.horas_dia,
       J_base: s.J_base,
       J_task: s.J_task,

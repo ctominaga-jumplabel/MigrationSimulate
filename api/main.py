@@ -109,6 +109,19 @@ def migrate(req: MigrateRequest) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Comparativo por complexidade: cliente (manual) × consultores (com Migrate).
+# Reativo às alavancas + nº de colaboradores + ganho. Embrulha core.compute_comparison.
+# ---------------------------------------------------------------------------
+@app.post("/api/comparison")
+def comparison(req: MigrateRequest) -> dict:
+    dataset_df, rollup_df = _dfs()
+    result = core.compute_comparison(
+        dataset_df, rollup_df, req.core_params(), gain_map=req.core_gain()
+    )
+    return deep_clean({"bruto": result["bruto"], "sem_dup": result["sem_dup"]})
+
+
+# ---------------------------------------------------------------------------
 # Cenários (KPIs Bruto + Sem-dup). Reativo às alavancas.
 # ---------------------------------------------------------------------------
 def _scenario_kpis(cen: dict) -> dict:

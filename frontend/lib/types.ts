@@ -5,6 +5,7 @@ export type Cenario = "bruto" | "sem_dup";
 
 export interface Params {
   n_consultores: number;
+  n_colaboradores: number; // colaboradores do cliente (migração manual)
   horas_dia: number;
   J_base: number;
   J_task: number;
@@ -96,6 +97,41 @@ export interface MigrateScenario {
 export interface MigrateResponse {
   bruto: MigrateScenario;
   sem_dup: MigrateScenario;
+}
+
+// --- Comparativo por complexidade: cliente (manual) × consultores (Migrate). --
+// Duração do MESMO esforço (horas-homem, fixo) sob equipes de tamanhos diferentes.
+
+export interface DuracaoBreakdown {
+  esforco_total: number; // horas-homem (independe do tamanho da equipe)
+  n_pessoas: number;
+  duracao_horas: number; // duração de calendário em horas úteis
+  duracao_dias: number; // dias úteis
+  duracao_meses: number; // meses (21 dias úteis/mês)
+  duracao_anos: number; // anos (252 dias úteis/ano)
+}
+
+export interface ComplexidadeRow {
+  categoria: string;
+  n_egp: number; // processos (.egp) com esta categoria predominante
+  n_sas: number; // arquivos .sas desta categoria
+}
+
+export interface ComparisonScenario {
+  manual: DuracaoBreakdown; // cliente, n_colaboradores pessoas
+  migrate: DuracaoBreakdown; // consultores, n_consultores pessoas, com Migrate
+  economia_horas: number; // esforço manual − migrate (horas-homem)
+  ganho_pct: number; // economia / esforço manual × 100
+  n_colaboradores: number;
+  n_consultores: number;
+  n_egps: number;
+  n_orfaos: number;
+  complexidade: ComplexidadeRow[];
+}
+
+export interface ComparisonResponse {
+  bruto: ComparisonScenario;
+  sem_dup: ComparisonScenario;
 }
 
 export interface EgpRow {

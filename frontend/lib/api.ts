@@ -1,6 +1,7 @@
 // Cliente da API fina (FastAPI sobre core.py). Sem cálculo — só transporte.
 import type {
   CatalogResponse,
+  ComparisonResponse,
   EgpsResponse,
   MigrateResponse,
   OrphansResponse,
@@ -35,6 +36,8 @@ export const api = {
   scenarios: (p: Params) => post<ScenariosResponse>("/api/scenarios", p),
   migrate: (p: Params, migrate_gain: Record<string, number>) =>
     post<MigrateResponse>("/api/migrate", { ...p, migrate_gain }),
+  comparison: (p: Params, migrate_gain: Record<string, number>) =>
+    post<ComparisonResponse>("/api/comparison", { ...p, migrate_gain }),
   egps: (p: Params, migrate_gain: Record<string, number>) =>
     post<EgpsResponse>("/api/egps", { ...p, migrate_gain }),
   egpChildren: (egp_name: string) =>

@@ -1,32 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE, expectedToken } from "@/lib/auth";
 
 /**
- * Gate de senha (HTTP Basic Auth) OPT-IN para a apresentação.
- * - Desligado por padrão: sem BASIC_AUTH_USER/BASIC_AUTH_PASS, tudo passa.
- * - Para ligar na Vercel: defina as duas envs (server-only, NÃO use prefixo
- *   NEXT_PUBLIC_) e refaça o deploy.
+ * Gate de login por TELA (cookie de sessão). Toda rota de UI exige um cookie de
+ * sessão válido; sem ele, o usuário é redirecionado para `/login`. As credenciais
+ * ficam em frontend/.env (APP_LOGIN_USER / APP_LOGIN_PASSWORD) — ver lib/auth.ts.
  *
- * Observação: isto protege a UI. A API (Render) continua acessível por URL —
- * para sigilo mais forte, proteja também a API (ex.: token compartilhado).
+ * Rotas liberadas (sem login): a própria `/login`, o endpoint de sessão
+ * `/session` e os assets do Next. O `/api/*` (função Python no Vercel, via
+ * rewrite) é deixado passar para não quebrar o XHR — o gate protege a UI; para
+ * sigilo mais forte, proteja também a API (token compartilhado).
  */
-export function middleware(req: NextRequest) {
-  const user = process.env.BASIC_AUTH_USER;
-  const pass = process.env.BASIC_AUTH_PASS;
-  if (!user || !pass) return NextResponse.next();
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-  const auth = req.headers.get("authorization");
-  if (auth?.startsWith("Basic ")) {
-    try {
-      const [u, p] = atob(auth.slice(6)).split(":");
-      if (u === user && p === pass) return NextResponse.next();
-    } catch {
-      /* credencial malformada → cai no 401 */
-    }
+  // Rotas públicas / que não devem ser gated.
+  if (
+    pathname === "/login" ||
+    pathname === "/session" ||
+    pathname.startsWith("/api")
+  ) {
+    return NextResponse.next();
   }
-  return new NextResponse("Autenticação necessária.", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="Cogna Mission Control"' },
-  });
+
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  if (token && token === (await expectedToken())) {
+    return NextResponse.next();
+  }
+
+  const url = req.nextUrl.clone();
+  url.pathname = "/login";
+  url.searchParams.set("from", pathname);
+  return NextResponse.redirect(url);
 }
 
 export const config = {

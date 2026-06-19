@@ -77,7 +77,16 @@ export default function ScenarioPage() {
             min={1}
             max={50}
             onChange={(v) => s.set({ n_consultores: v })}
-            hint="Tamanho da equipe. Reduz a duração e o número de sprints — não o esforço."
+            hint="Tamanho da equipe (consultores, com Migrate). Reduz a duração e o número de sprints — não o esforço."
+          />
+          <LeverSlider
+            label="Colaboradores do cliente"
+            value={s.n_colaboradores}
+            min={1}
+            max={200}
+            unit="pessoas"
+            onChange={(v) => s.set({ n_colaboradores: v })}
+            hint="Tamanho da equipe do CLIENTE para uma migração MANUAL (até 200 pessoas). Usado no Comparativo por complexidade — quanto maior a equipe, menor a duração da migração manual."
           />
           <LeverSlider
             label="Horas produtivas / dia"

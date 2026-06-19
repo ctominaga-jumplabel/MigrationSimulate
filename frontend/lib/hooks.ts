@@ -11,6 +11,7 @@ import type { Params } from "./types";
 /** Constrói o objeto `params` (estável por valor) assinando o store. */
 export function useParams(): Params {
   const n_consultores = useSim((s) => s.n_consultores);
+  const n_colaboradores = useSim((s) => s.n_colaboradores);
   const horas_dia = useSim((s) => s.horas_dia);
   const J_base = useSim((s) => s.J_base);
   const J_task = useSim((s) => s.J_task);
@@ -23,6 +24,7 @@ export function useParams(): Params {
     const prio = prioridades[cenario] ?? {};
     return {
       n_consultores,
+      n_colaboradores,
       horas_dia,
       J_base,
       J_task,
@@ -38,7 +40,7 @@ export function useParams(): Params {
         };
       }),
     };
-  }, [n_consultores, horas_dia, J_base, J_task, K, data_inicio, cenario, prioridades]);
+  }, [n_consultores, n_colaboradores, horas_dia, J_base, J_task, K, data_inicio, cenario, prioridades]);
 }
 
 const key = (p: Params) => JSON.stringify(p);
@@ -64,6 +66,14 @@ export function useMigrate(p: Params, gain: Record<string, number>) {
   return useQuery({
     queryKey: ["migrate", key(p), JSON.stringify(gain)],
     queryFn: () => api.migrate(p, gain),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useComparison(p: Params, gain: Record<string, number>) {
+  return useQuery({
+    queryKey: ["comparison", key(p), JSON.stringify(gain)],
+    queryFn: () => api.comparison(p, gain),
     placeholderData: (prev) => prev,
   });
 }

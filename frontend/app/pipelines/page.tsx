@@ -10,7 +10,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { fmtHoras, fmtInt, fmtPct } from "@/lib/format";
-import { useEgpChildren, useEgps, useMigrate, useMigrateGain, useParams } from "@/lib/hooks";
+import { useEgpChildren, useEgps, useMigrateGain, useParams } from "@/lib/hooks";
 import { useSim } from "@/lib/store";
 import type { EgpRow } from "@/lib/types";
 import { AnimatePresence, motion } from "framer-motion";
@@ -25,8 +25,6 @@ export default function PipelinesPage() {
   const setPrioridade = useSim((s) => s.setPrioridade);
   const gain = useMigrateGain();
   const { data, isLoading } = useEgps(params, gain);
-  const { data: mig } = useMigrate(params, gain);
-  const migActive = mig?.[cenario];
 
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("horas_total");
@@ -56,6 +54,26 @@ export default function PipelinesPage() {
   const cats = ["todas", "Trivial", "Simples", "Médio", "Complexo", "Muito Complexo"];
   const maxHoras = egps.reduce((m, e) => Math.max(m, e.horas_total), 0);
 
+  // Aceleração com Migrate — APENAS dos processos (.egp) desta tela. Os .sas
+  // órfãos NÃO entram aqui (têm tela própria, "SAS Órfãos"); por isso somamos
+  // sobre os EGPs e não usamos o total do cenário, que inclui os órfãos.
+  const egpTotals = useMemo(() => {
+    const sum = (f: (e: EgpRow) => number) => egps.reduce((s, e) => s + f(e), 0);
+    const esforco = sum((e) => e.horas_total);
+    const esforcoMig = sum((e) => e.horas_total_migrate);
+    const economia = esforco - esforcoMig;
+    return {
+      esforco,
+      esforcoMig,
+      sas: sum((e) => e.horas_sas),
+      sasMig: sum((e) => e.horas_sas_migrate),
+      job: sum((e) => e.horas_job),
+      jobMig: sum((e) => e.horas_job_migrate),
+      economia,
+      ganhoPct: esforco > 0 ? (economia / esforco) * 100 : 0,
+    };
+  }, [egps]);
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -69,27 +87,27 @@ export default function PipelinesPage() {
         }
       />
 
-      {migActive && (
+      {egps.length > 0 && (
         <MigrateBanner
-          ganhoPct={migActive.ganho_pct}
+          ganhoPct={egpTotals.ganhoPct}
           title="Aceleração com Migrate"
-          subtitle="projeção (MigrateMind) no cenário — conversão .sas e overhead de Job reduzidos; a tabela abaixo mostra as horas manuais"
+          subtitle="projeção (MigrateMind) só dos processos .egp desta tela — conversão .sas e overhead de Job reduzidos; órfãos têm tela própria. A tabela abaixo mostra as horas manuais"
           stats={[
             {
-              label: "Esforço",
-              value: `${fmtHoras(migActive.manual.esforco_total)} → ${fmtHoras(migActive.migrate.esforco_total)}`,
+              label: "Esforço (.egp)",
+              value: `${fmtHoras(egpTotals.esforco)} → ${fmtHoras(egpTotals.esforcoMig)}`,
             },
             {
               label: "Horas .sas",
-              value: `${fmtHoras(migActive.manual.horas_sas)} → ${fmtHoras(migActive.migrate.horas_sas)}`,
+              value: `${fmtHoras(egpTotals.sas)} → ${fmtHoras(egpTotals.sasMig)}`,
             },
             {
               label: "Overhead de Job",
-              value: `${fmtHoras(migActive.manual.horas_job)} → ${fmtHoras(migActive.migrate.horas_job)}`,
+              value: `${fmtHoras(egpTotals.job)} → ${fmtHoras(egpTotals.jobMig)}`,
             },
             {
               label: "Economia",
-              value: `−${fmtHoras(migActive.economia_horas)}`,
+              value: `−${fmtHoras(egpTotals.economia)}`,
               success: true,
             },
           ]}

@@ -5,13 +5,16 @@ import { Icon } from "@/components/layout/Icon";
 import { Badge, categoriaTone } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Pagination } from "@/components/ui/Pagination";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { fmtHoras, fmtInt } from "@/lib/format";
 import { useMigrateGain, useOrphans, useParams } from "@/lib/hooks";
 import { useSim } from "@/lib/store";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+const PAGE_SIZE = 100;
 
 export default function OrphansPage() {
   const params = useParams();
@@ -23,6 +26,7 @@ export default function OrphansPage() {
 
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("todas");
+  const [page, setPage] = useState(0);
 
   const orphans = data?.orphans ?? [];
   const filtered = useMemo(() => {
@@ -31,6 +35,13 @@ export default function OrphansPage() {
     if (cat !== "todas") rows = rows.filter((o) => o.categoria === cat);
     return rows;
   }, [orphans, q, cat]);
+
+  // Volta à 1ª página quando o recorte muda (busca, filtro, cenário).
+  useEffect(() => {
+    setPage(0);
+  }, [q, cat, cenario]);
+
+  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const cats = ["todas", "Trivial", "Simples", "Médio", "Complexo", "Muito Complexo"];
   const total = orphans.reduce((s, o) => s + o.horas_estimadas, 0);
@@ -120,6 +131,7 @@ export default function OrphansPage() {
           title="Nenhum SAS (sem EGP) encontrado"
         />
       ) : (
+        <>
         <Card className="overflow-hidden p-0">
           <div className="grid grid-cols-[2.2fr_1fr_0.7fr_0.9fr_0.9fr_0.7fr] border-b border-line px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
             <span>Arquivo</span>
@@ -130,7 +142,7 @@ export default function OrphansPage() {
             <span className="text-right">Prioridade</span>
           </div>
           <div className="max-h-[600px] overflow-y-auto">
-            {filtered.slice(0, 300).map((o, i) => {
+            {paged.map((o) => {
               const def = orphans.findIndex((x) => x.file_name === o.file_name) + 1;
               const prio = prioridades[`orfao:${o.file_name}`] ?? def;
               const oMig = o.horas_estimadas * (1 - (gain[o.categoria] ?? 0) / 100);
@@ -169,12 +181,15 @@ export default function OrphansPage() {
               );
             })}
           </div>
-          {filtered.length > 300 && (
-            <p className="py-3 text-center text-xs text-ink-faint">
-              Exibindo os 300 primeiros de {fmtInt(filtered.length)}.
-            </p>
-          )}
         </Card>
+        <Pagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={filtered.length}
+          onPage={setPage}
+          itemLabel="arquivos"
+        />
+        </>
       )}
     </div>
   );

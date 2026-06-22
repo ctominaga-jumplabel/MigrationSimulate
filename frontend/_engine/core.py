@@ -143,6 +143,13 @@ def egp_table(rollup_df: pd.DataFrame, params: dict, cenario: str) -> pd.DataFra
     horas_col = "soma_horas_sas_sem_dup" if is_sem_dup else "soma_horas_sas"
     n_col = "n_sas_sem_dup" if is_sem_dup else "n_sas"
     loc_col = "soma_loc_sem_dup" if is_sem_dup else "soma_loc"
+    # Categoria de complexidade do EGP reavaliada pela metodologia D1–D7 sobre a
+    # SOMATÓRIA dos .sas do EGP (egp_complexity.py), não mais a moda das
+    # categorias filhas. Cada cenário usa o recorte correspondente de .sas;
+    # fallback para `categoria_predominante` em rollups antigos sem a coluna.
+    cat_col = "categoria_egp_sem_dup" if is_sem_dup else "categoria_egp"
+    if cat_col not in rollup_df.columns:
+        cat_col = "categoria_predominante"
 
     # Sem-dup oficial: só os EGPs canônicos de cada família carregam Job/horas.
     src = canonical_rollup(rollup_df) if is_sem_dup else rollup_df
@@ -154,7 +161,7 @@ def egp_table(rollup_df: pd.DataFrame, params: dict, cenario: str) -> pd.DataFra
             # Linhas de código (loc_total) somadas de todos os .sas do EGP.
             "loc_total": src[loc_col].astype(int).to_numpy(),
             "horas_sas": src[horas_col].astype(float).to_numpy(),
-            "categoria_predominante": src["categoria_predominante"].to_numpy(),
+            "categoria_predominante": src[cat_col].to_numpy(),
         }
     )
     out["horas_job"] = job_overhead(out["n_sas"], params).astype(float)

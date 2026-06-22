@@ -404,6 +404,11 @@ function ComplexidadeTable({
   const totHOrfMig = selRows.reduce((a, r) => a + r.horas_orfao_migrate, 0);
   // Barras proporcionais ao ESFORÇO MANUAL (a magnitude que importa no comparativo).
   const maxH = Math.max(1, ...rows.map((r) => Math.max(r.horas_egp, r.horas_orfao)));
+  // Representatividade: quantidade de cada complexidade sobre o TOTAL (todas as
+  // complexidades), separada para .egp e SAS sem EGP. Independe da seleção.
+  const totEgpAll = rows.reduce((a, r) => a + r.n_egp, 0);
+  const totOrfAll = rows.reduce((a, r) => a + r.n_orfao, 0);
+  const pctOf = (n: number, tot: number) => (tot > 0 ? (n / tot) * 100 : 0);
 
   return (
     <Card className="overflow-hidden p-0">
@@ -463,6 +468,7 @@ function ComplexidadeTable({
                 </button>
                 <MetricCell
                   qtd={r.n_egp}
+                  repr={pctOf(r.n_egp, totEgpAll)}
                   horas={r.horas_egp}
                   horasMig={r.horas_egp_migrate}
                   maxH={maxH}
@@ -474,6 +480,7 @@ function ComplexidadeTable({
                 />
                 <MetricCell
                   qtd={r.n_orfao}
+                  repr={pctOf(r.n_orfao, totOrfAll)}
                   horas={r.horas_orfao}
                   horasMig={r.horas_orfao_migrate}
                   maxH={maxH}
@@ -493,6 +500,7 @@ function ComplexidadeTable({
           </div>
           <TotalCell
             qtd={totEgp}
+            repr={pctOf(totEgp, totEgpAll)}
             horas={totHEgp}
             horasMig={totHEgpMig}
             unidade={unidade}
@@ -501,6 +509,7 @@ function ComplexidadeTable({
           />
           <TotalCell
             qtd={totOrf}
+            repr={pctOf(totOrf, totOrfAll)}
             horas={totHOrf}
             horasMig={totHOrfMig}
             unidade={unidade}
@@ -519,6 +528,7 @@ function ComplexidadeTable({
  */
 function MetricCell({
   qtd,
+  repr,
   horas,
   horasMig,
   maxH,
@@ -529,6 +539,7 @@ function MetricCell({
   diasUteisMes,
 }: {
   qtd: number;
+  repr: number; // % da quantidade sobre o total da coluna (representatividade)
   horas: number;
   horasMig: number;
   maxH: number;
@@ -546,7 +557,12 @@ function MetricCell({
       }`}
     >
       <div className="flex items-baseline justify-between gap-2">
-        <span className="num text-sm font-semibold text-ink">{fmtInt(qtd)} un</span>
+        <span className="num text-sm font-semibold text-ink">
+          {fmtInt(qtd)} un
+          <span className="ml-1.5 text-[11px] font-medium text-ink-faint">
+            {fmtPct(repr, 1)} do total
+          </span>
+        </span>
         {horas > 0 && (
           <span className="num text-[11px] font-semibold text-success">
             −{fmtPct(ganho, 0)}
@@ -619,6 +635,7 @@ function EffortBar({
 
 function TotalCell({
   qtd,
+  repr,
   horas,
   horasMig,
   unidade,
@@ -626,6 +643,7 @@ function TotalCell({
   diasUteisMes,
 }: {
   qtd: number;
+  repr: number; // % da quantidade selecionada sobre o total da coluna
   horas: number;
   horasMig: number;
   unidade: DuracaoUnidade;
@@ -636,7 +654,12 @@ function TotalCell({
   return (
     <div className="border-l border-line px-5 py-3">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="num text-sm font-bold text-ink">{fmtInt(qtd)} un</span>
+        <span className="num text-sm font-bold text-ink">
+          {fmtInt(qtd)} un
+          <span className="ml-1.5 text-[11px] font-medium text-ink-faint">
+            {fmtPct(repr, 1)} do total
+          </span>
+        </span>
         {horas > 0 && (
           <span className="num text-[11px] font-semibold text-success">
             −{fmtPct(ganho, 0)}

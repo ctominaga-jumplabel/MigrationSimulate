@@ -58,6 +58,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from egp_complexity import compute_egp_complexity
+
 # ----------------------------------------------------------------------------
 # Caminhos (absolutos, fixos ao repositório)
 # ----------------------------------------------------------------------------
@@ -220,6 +222,20 @@ def build_rollup(df: pd.DataFrame) -> pd.DataFrame:
     rollup["n_sas_sem_dup"] = rollup["n_sas_sem_dup"].fillna(0).astype(int)
     rollup["soma_horas_sas_sem_dup"] = rollup["soma_horas_sas_sem_dup"].fillna(0.0)
     rollup["soma_loc_sem_dup"] = rollup["soma_loc_sem_dup"].fillna(0).astype(int)
+
+    # Complexidade reavaliada do EGP (mesma metodologia D1–D7 dos .sas, aplicada
+    # à SOMATÓRIA de todos os .sas do EGP — ver egp_complexity.py). Substitui a
+    # `categoria_predominante` (moda) no uso da app; esta fica como referência.
+    egp_cplx = compute_egp_complexity(df)
+    rollup = rollup.merge(egp_cplx, on="egp_name", how="left")
+    # Fallback defensivo: se algum EGP não foi reavaliado (arquivo ausente),
+    # mantém a categoria predominante para não quebrar a UI/agrupamentos.
+    rollup["categoria_egp"] = rollup["categoria_egp"].fillna(
+        rollup["categoria_predominante"]
+    )
+    rollup["categoria_egp_sem_dup"] = rollup["categoria_egp_sem_dup"].fillna(
+        rollup["categoria_egp"]
+    )
 
     return rollup
 

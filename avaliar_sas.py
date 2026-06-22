@@ -758,6 +758,12 @@ def evaluate_file(path: Path, rel: str) -> dict:
         "_d6_points": d6_pts,
         "_has_mojibake": has_mojibake,
         "_macro_depth": macro_nest,
+        # métricas brutas de D7 não persistidas nas colunas oficiais, mas
+        # necessárias para reavaliar a complexidade agregada do EGP
+        # (egp_complexity.py): contagens somáveis / flag OR-ável.
+        "_n_magic_numbers": n_magic_numbers,
+        "_has_name_literal": has_name_literal,
+        "_has_macro_if_and_do": has_macro_if_and_do,
     }
 
 

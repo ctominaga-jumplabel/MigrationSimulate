@@ -5,6 +5,7 @@ import { Icon } from "@/components/layout/Icon";
 import { Badge, categoriaTone } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Pagination } from "@/components/ui/Pagination";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -14,9 +15,11 @@ import { useEgpChildren, useEgps, useMigrateGain, useParams } from "@/lib/hooks"
 import { useSim } from "@/lib/store";
 import type { EgpRow } from "@/lib/types";
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Sort = "horas_total" | "n_sas" | "prioridade";
+
+const PAGE_SIZE = 60;
 
 export default function PipelinesPage() {
   const params = useParams();
@@ -30,6 +33,7 @@ export default function PipelinesPage() {
   const [sort, setSort] = useState<Sort>("horas_total");
   const [cat, setCat] = useState<string>("todas");
   const [open, setOpen] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
 
   const egps = data?.egps ?? [];
 
@@ -50,6 +54,14 @@ export default function PipelinesPage() {
     }
     return rows;
   }, [egps, q, cat, sort, prioridades]);
+
+  // Volta à primeira página quando o recorte muda (busca, filtro, ordenação,
+  // cenário) — senão a página atual poderia ficar fora do novo total.
+  useEffect(() => {
+    setPage(0);
+  }, [q, cat, sort, cenario]);
+
+  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const cats = ["todas", "Trivial", "Simples", "Médio", "Complexo", "Muito Complexo"];
   const maxHoras = egps.reduce((m, e) => Math.max(m, e.horas_total), 0);
@@ -162,31 +174,34 @@ export default function PipelinesPage() {
           description="Ajuste a busca ou os filtros."
         />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {filtered.slice(0, 120).map((egp, i) => (
-            <EgpCard
-              key={egp.egp_name}
-              egp={egp}
-              rank={i + 1}
-              maxHoras={maxHoras}
-              priority={
-                prioridades[`egp:${egp.egp_name}`] ??
-                egps.findIndex((e) => e.egp_name === egp.egp_name) + 1
-              }
-              onPriority={(p) => setPrioridade(cenario, "egp", egp.egp_name, p)}
-              open={open === egp.egp_name}
-              onToggle={() =>
-                setOpen(open === egp.egp_name ? null : egp.egp_name)
-              }
-            />
-          ))}
-          {filtered.length > 120 && (
-            <p className="col-span-full py-2 text-center text-xs text-ink-faint">
-              Exibindo os 120 primeiros de {fmtInt(filtered.length)} — refine a busca
-              para ver outros.
-            </p>
-          )}
-        </div>
+        <>
+          <div className="grid gap-3 md:grid-cols-2">
+            {paged.map((egp, i) => (
+              <EgpCard
+                key={egp.egp_name}
+                egp={egp}
+                rank={page * PAGE_SIZE + i + 1}
+                maxHoras={maxHoras}
+                priority={
+                  prioridades[`egp:${egp.egp_name}`] ??
+                  egps.findIndex((e) => e.egp_name === egp.egp_name) + 1
+                }
+                onPriority={(p) => setPrioridade(cenario, "egp", egp.egp_name, p)}
+                open={open === egp.egp_name}
+                onToggle={() =>
+                  setOpen(open === egp.egp_name ? null : egp.egp_name)
+                }
+              />
+            ))}
+          </div>
+          <Pagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={filtered.length}
+            onPage={setPage}
+            itemLabel="EGPs"
+          />
+        </>
       )}
     </div>
   );

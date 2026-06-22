@@ -42,7 +42,7 @@ export const MIGRATE_GAIN_DEFAULTS: Record<string, number> = {
 const DEFAULTS = {
   n_consultores: 5,
   n_colaboradores: 50,
-  horas_dia: 6,
+  horas_dia: 7.5,
   J_base: 8,
   J_task: 2,
   K: 1.0,

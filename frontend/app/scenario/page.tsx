@@ -27,7 +27,7 @@ const RULES = [
   {
     icon: "Settings",
     title: "J_base e J_task formam o overhead de Job",
-    body: "Cada EGP vira 1 Job no Databricks. Horas de Job = J_base + J_task × nº de .sas. Órfãos não têm overhead de Job.",
+    body: "Cada EGP vira 1 Job no Databricks. Horas de Job = J_base + J_task × nº de .sas. SAS (sem EGP) não têm overhead de Job.",
   },
   {
     icon: "Copy",

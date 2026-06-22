@@ -162,7 +162,7 @@ export default function ComparisonPage() {
               Quantidade e esforço (×K {s.K}) por complexidade — processos{" "}
               <span className="font-semibold text-ink">.egp</span> (conversão dos
               seus .sas + overhead de Job) e arquivos{" "}
-              <span className="font-semibold text-ink">.sas órfãos</span> (fora de
+              <span className="font-semibold text-ink">SAS (sem EGP)</span> (fora de
               qualquer .egp), separados e somáveis. Cada célula compara o esforço{" "}
               <span className="font-semibold text-accent">manual</span> com o{" "}
               <span className="font-semibold text-success">Migrate</span>.
@@ -430,7 +430,7 @@ function ComplexidadeTable({
           </div>
           <div className="border-b border-l border-line px-5 py-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">
             <span className="flex items-center gap-1.5">
-              <Icon name="DocumentText" size={14} /> .sas órfãos
+              <Icon name="DocumentText" size={14} /> SAS (sem EGP)
             </span>
           </div>
 
@@ -737,8 +737,8 @@ function ComplexidadeComparativo({
             </div>
             <HeadCell icon="Hierarchy" titulo=".egp" sub="manual" />
             <HeadCell icon="Hierarchy" titulo=".egp" sub="Migrate" migrate />
-            <HeadCell icon="DocumentText" titulo="órfão" sub="manual" />
-            <HeadCell icon="DocumentText" titulo="órfão" sub="Migrate" migrate />
+            <HeadCell icon="DocumentText" titulo="SAS (sem EGP)" sub="manual" />
+            <HeadCell icon="DocumentText" titulo="SAS (sem EGP)" sub="Migrate" migrate />
 
             {/* Linhas por complexidade */}
             {rows.map((r, i) => {
@@ -993,7 +993,7 @@ function EquipeHibrida({
         Migrate) e o restante pelo <span className="font-semibold text-accent">cliente</span>{" "}
         (manual). Defina, por complexidade, o <span className="font-semibold text-ink">% migrado
         pela consultoria</span> — um para <span className="font-semibold text-ink">.egp</span> e
-        outro para <span className="font-semibold text-ink">.sas órfãos</span>. Como as frentes
+        outro para <span className="font-semibold text-ink">SAS (sem EGP)</span>. Como as frentes
         trabalham em paralelo, a duração é o gargalo entre elas.
       </p>
 
@@ -1005,7 +1005,7 @@ function EquipeHibrida({
               Complexidade
             </div>
             <HeadCell icon="Hierarchy" titulo=".egp" sub="% consultoria" migrate />
-            <HeadCell icon="DocumentText" titulo="órfão" sub="% consultoria" migrate />
+            <HeadCell icon="DocumentText" titulo="SAS (sem EGP)" sub="% consultoria" migrate />
             <div className="border-b border-l border-line px-4 py-3">
               <span className="text-xs font-semibold uppercase tracking-wide text-success">
                 Consultoria

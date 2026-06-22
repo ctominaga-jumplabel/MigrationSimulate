@@ -56,7 +56,7 @@ export default function OrphansPage() {
     <div className="space-y-6">
       <SectionHeader
         eyebrow="Itens avulsos"
-        title="SAS Órfãos"
+        title="SAS (sem EGP)"
         description="Arquivos .sas de all_sas/ que não pertencem a nenhum EGP. Migram como itens avulsos e — diferente dos EGPs — não têm overhead de Job."
         actions={
           <Badge tone={cenario === "bruto" ? "accent" : "electric"}>
@@ -66,7 +66,7 @@ export default function OrphansPage() {
       />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Stat label="Órfãos no cenário" value={fmtInt(orphans.length)} icon="DocumentText" />
+        <Stat label="SAS (sem EGP) no cenário" value={fmtInt(orphans.length)} icon="DocumentText" />
         <Stat label="Linhas (total)" value={fmtInt(totalLoc)} icon="Code" />
         <Stat label="Horas estimadas" value={fmtHoras(total)} icon="Clock" accent />
         <Stat
@@ -80,7 +80,7 @@ export default function OrphansPage() {
         <MigrateBanner
           ganhoPct={migrate.ganhoPct}
           title="Aceleração com Migrate"
-          subtitle="ganho aplicado à conversão de cada órfão por complexidade — órfãos não têm overhead de Job"
+          subtitle="ganho aplicado à conversão de cada arquivo SAS (sem EGP) por complexidade — não têm overhead de Job"
           stats={[
             {
               label: "Horas estimadas",
@@ -117,7 +117,7 @@ export default function OrphansPage() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<Icon name="SearchStatus" size={32} />}
-          title="Nenhum órfão encontrado"
+          title="Nenhum SAS (sem EGP) encontrado"
         />
       ) : (
         <Card className="overflow-hidden p-0">

@@ -162,7 +162,7 @@ export default function SprintsPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <Badge tone={it.tipo === "egp" ? "accent" : "electric"}>
-                          {it.tipo === "egp" ? "EGP" : "órfão"}
+                          {it.tipo === "egp" ? "EGP" : "SAS (sem EGP)"}
                         </Badge>
                         {it.sprint_final > it.sprint_inicial && (
                           <span className="text-[10px] text-ink-faint">

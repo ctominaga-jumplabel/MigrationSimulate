@@ -115,7 +115,7 @@ export default function OverviewPage() {
             delay={0.2}
           />
           <KpiCard
-            label="SAS órfãos"
+            label="SAS (sem EGP)"
             value={active.n_orfaos}
             format={(v) => fmtInt(v)}
             accent="electric"

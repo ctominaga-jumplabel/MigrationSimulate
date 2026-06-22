@@ -77,7 +77,7 @@ export default function ExportPage() {
             <Headline label="Esforço total" value={active ? fmtHoras(active.esforco_total) : "—"} />
             <Headline label="Duração" value={active ? fmtDec(active.duracao_dias_uteis) + " dias úteis" : "—"} />
             <Headline label="Nº de sprints" value={active ? fmtInt(active.n_sprints) : "—"} />
-            <Headline label="EGPs + órfãos" value={active ? `${fmtInt(active.n_egps)} + ${fmtInt(active.n_orfaos)}` : "—"} />
+            <Headline label="EGPs + SAS (sem EGP)" value={active ? `${fmtInt(active.n_egps)} + ${fmtInt(active.n_orfaos)}` : "—"} />
           </div>
 
           {migActive && (

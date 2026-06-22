@@ -155,7 +155,7 @@ export default function TimelinePage() {
               <span className="h-3 w-5 rounded bg-grad-accent" /> EGP
             </span>
             <span className="flex items-center gap-2">
-              <span className="h-3 w-5 rounded bg-grad-electric" /> Órfão
+              <span className="h-3 w-5 rounded bg-grad-electric" /> SAS (sem EGP)
             </span>
             <span className="flex items-center gap-2 text-success">
               → esforço com Migrate (por item)

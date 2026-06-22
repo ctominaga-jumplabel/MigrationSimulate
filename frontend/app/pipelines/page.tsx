@@ -91,7 +91,7 @@ export default function PipelinesPage() {
         <MigrateBanner
           ganhoPct={egpTotals.ganhoPct}
           title="Aceleração com Migrate"
-          subtitle="projeção (MigrateMind) só dos processos .egp desta tela — conversão .sas e overhead de Job reduzidos; órfãos têm tela própria. A tabela abaixo mostra as horas manuais"
+          subtitle="projeção (MigrateMind) só dos processos .egp desta tela — conversão .sas e overhead de Job reduzidos; SAS (sem EGP) têm tela própria. A tabela abaixo mostra as horas manuais"
           stats={[
             {
               label: "Esforço (.egp)",

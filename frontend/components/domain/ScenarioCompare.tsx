@@ -20,7 +20,7 @@ export function ScenarioCompare({ data }: { data: ScenariosResponse }) {
     { label: "Duração (dias úteis)", b: fmtDec(b.duracao_dias_uteis), s: fmtDec(s.duracao_dias_uteis) },
     { label: "Nº de sprints", b: fmtInt(b.n_sprints), s: fmtInt(s.n_sprints) },
     { label: "EGPs", b: fmtInt(b.n_egps), s: fmtInt(s.n_egps) },
-    { label: "Órfãos", b: fmtInt(b.n_orfaos), s: fmtInt(s.n_orfaos) },
+    { label: "SAS (sem EGP)", b: fmtInt(b.n_orfaos), s: fmtInt(s.n_orfaos) },
   ];
 
   return (

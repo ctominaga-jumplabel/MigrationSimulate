@@ -158,8 +158,9 @@ export default function ComparisonPage() {
               <span className="font-semibold text-ink">.egp</span> (conversão dos
               seus .sas + overhead de Job) e arquivos{" "}
               <span className="font-semibold text-ink">.sas órfãos</span> (fora de
-              qualquer .egp), separados e somáveis: juntos formam o esforço manual
-              do cenário.
+              qualquer .egp), separados e somáveis. Cada célula compara o esforço{" "}
+              <span className="font-semibold text-accent">manual</span> com o{" "}
+              <span className="font-semibold text-success">Migrate</span>.
             </p>
             <ComplexidadeTable rows={active.complexidade} />
           </div>
@@ -335,9 +336,11 @@ function ComplexidadeTable({
 }) {
   const totEgp = rows.reduce((a, r) => a + r.n_egp, 0);
   const totHEgp = rows.reduce((a, r) => a + r.horas_egp, 0);
+  const totHEgpMig = rows.reduce((a, r) => a + r.horas_egp_migrate, 0);
   const totOrf = rows.reduce((a, r) => a + r.n_orfao, 0);
   const totHOrf = rows.reduce((a, r) => a + r.horas_orfao, 0);
-  // Barras proporcionais ao ESFORÇO (a magnitude que importa no comparativo).
+  const totHOrfMig = rows.reduce((a, r) => a + r.horas_orfao_migrate, 0);
+  // Barras proporcionais ao ESFORÇO MANUAL (a magnitude que importa no comparativo).
   const maxH = Math.max(1, ...rows.map((r) => Math.max(r.horas_egp, r.horas_orfao)));
 
   return (
@@ -372,13 +375,15 @@ function ComplexidadeTable({
               <MetricCell
                 qtd={r.n_egp}
                 horas={r.horas_egp}
-                pct={(r.horas_egp / maxH) * 100}
+                horasMig={r.horas_egp_migrate}
+                maxH={maxH}
                 barClass="bg-accent"
               />
               <MetricCell
                 qtd={r.n_orfao}
                 horas={r.horas_orfao}
-                pct={(r.horas_orfao / maxH) * 100}
+                horasMig={r.horas_orfao_migrate}
+                maxH={maxH}
                 barClass="bg-electric"
               />
             </motion.div>
@@ -386,33 +391,81 @@ function ComplexidadeTable({
 
           {/* Totais */}
           <div className="px-5 py-3 text-sm font-bold text-ink">Total</div>
-          <TotalCell qtd={totEgp} horas={totHEgp} />
-          <TotalCell qtd={totOrf} horas={totHOrf} />
+          <TotalCell qtd={totEgp} horas={totHEgp} horasMig={totHEgpMig} />
+          <TotalCell qtd={totOrf} horas={totHOrf} horasMig={totHOrfMig} />
         </div>
       </div>
     </Card>
   );
 }
 
-/** Célula com quantidade (destaque), esforço em horas e barra por esforço. */
+/**
+ * Célula com quantidade (destaque) e comparativo de esforço Manual × Migrate:
+ * duas barras proporcionais ao mesmo `maxH` (manual sempre ≥ migrate) + % de redução.
+ */
 function MetricCell({
   qtd,
+  horas,
+  horasMig,
+  maxH,
+  barClass,
+}: {
+  qtd: number;
+  horas: number;
+  horasMig: number;
+  maxH: number;
+  barClass: string;
+}) {
+  const ganho = horas > 0 ? (1 - horasMig / horas) * 100 : 0;
+  return (
+    <div className="border-b border-l border-line px-5 py-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="num text-sm font-semibold text-ink">{fmtInt(qtd)} un</span>
+        {horas > 0 && (
+          <span className="num text-[11px] font-semibold text-success">
+            −{fmtPct(ganho, 0)}
+          </span>
+        )}
+      </div>
+      <div className="mt-2 space-y-1.5">
+        <EffortBar
+          label="Manual"
+          horas={horas}
+          pct={(horas / maxH) * 100}
+          barClass={barClass}
+        />
+        <EffortBar
+          label="Migrate"
+          horas={horasMig}
+          pct={(horasMig / maxH) * 100}
+          barClass="bg-success"
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Linha rotulada (Manual/Migrate) com horas e barra proporcional ao esforço. */
+function EffortBar({
+  label,
   horas,
   pct,
   barClass,
 }: {
-  qtd: number;
+  label: string;
   horas: number;
   pct: number;
   barClass: string;
 }) {
   return (
-    <div className="border-b border-l border-line px-5 py-3">
+    <div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="num text-sm font-semibold text-ink">{fmtInt(qtd)} un</span>
+        <span className="text-[10px] uppercase tracking-wide text-ink-faint">
+          {label}
+        </span>
         <span className="num text-xs text-ink-muted">{fmtHoras(horas)}</span>
       </div>
-      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/[0.06]">
+      <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-black/[0.06]">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
@@ -424,13 +477,33 @@ function MetricCell({
   );
 }
 
-function TotalCell({ qtd, horas }: { qtd: number; horas: number }) {
+function TotalCell({
+  qtd,
+  horas,
+  horasMig,
+}: {
+  qtd: number;
+  horas: number;
+  horasMig: number;
+}) {
+  const ganho = horas > 0 ? (1 - horasMig / horas) * 100 : 0;
   return (
     <div className="border-l border-line px-5 py-3">
       <div className="flex items-baseline justify-between gap-2">
         <span className="num text-sm font-bold text-ink">{fmtInt(qtd)} un</span>
-        <span className="num text-xs font-semibold text-ink-muted">
-          {fmtHoras(horas)}
+        {horas > 0 && (
+          <span className="num text-[11px] font-semibold text-success">
+            −{fmtPct(ganho, 0)}
+          </span>
+        )}
+      </div>
+      <div className="mt-1 flex items-baseline justify-between gap-2 text-xs">
+        <span className="text-ink-faint">
+          Manual <span className="num font-semibold text-ink">{fmtHoras(horas)}</span>
+        </span>
+        <span className="text-ink-faint">
+          Migrate{" "}
+          <span className="num font-semibold text-success">{fmtHoras(horasMig)}</span>
         </span>
       </div>
     </div>

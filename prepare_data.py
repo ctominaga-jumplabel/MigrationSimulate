@@ -201,21 +201,25 @@ def build_rollup(df: pd.DataFrame) -> pd.DataFrame:
     rollup = grouped.agg(
         n_sas=("file_name", "size"),
         soma_horas_sas=("horas_estimadas", "sum"),
+        soma_loc=("loc_total", "sum"),
         categoria_predominante=("categoria", _mode_categoria),
         pipeline_family=("pipeline_family", "first"),
     ).reset_index()
+    rollup["soma_loc"] = rollup["soma_loc"].fillna(0).astype(int)
 
     # Cenário SEM-DUP a nível de arquivo: só is_likely_duplicate == False.
     sem_dup = egp_df[~egp_df["is_likely_duplicate"]]
     sem_dup_grouped = sem_dup.groupby("egp_name", sort=True).agg(
         n_sas_sem_dup=("file_name", "size"),
         soma_horas_sas_sem_dup=("horas_estimadas", "sum"),
+        soma_loc_sem_dup=("loc_total", "sum"),
     ).reset_index()
 
     rollup = rollup.merge(sem_dup_grouped, on="egp_name", how="left")
-    # EGPs sem nenhum .sas não-duplicata: 0 arquivos / 0 horas.
+    # EGPs sem nenhum .sas não-duplicata: 0 arquivos / 0 horas / 0 linhas.
     rollup["n_sas_sem_dup"] = rollup["n_sas_sem_dup"].fillna(0).astype(int)
     rollup["soma_horas_sas_sem_dup"] = rollup["soma_horas_sas_sem_dup"].fillna(0.0)
+    rollup["soma_loc_sem_dup"] = rollup["soma_loc_sem_dup"].fillna(0).astype(int)
 
     return rollup
 

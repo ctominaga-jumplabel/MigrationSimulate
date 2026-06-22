@@ -34,6 +34,7 @@ export default function OrphansPage() {
 
   const cats = ["todas", "Trivial", "Simples", "Médio", "Complexo", "Muito Complexo"];
   const total = orphans.reduce((s, o) => s + o.horas_estimadas, 0);
+  const totalLoc = orphans.reduce((s, o) => s + o.loc_total, 0);
 
   // Órfãos não têm overhead de Job; o ganho do Migrate incide direto na conversão
   // de cada arquivo, pela sua própria categoria (mesma % calibrada que o motor usa).
@@ -64,8 +65,9 @@ export default function OrphansPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Stat label="Órfãos no cenário" value={fmtInt(orphans.length)} icon="DocumentText" />
+        <Stat label="Linhas (total)" value={fmtInt(totalLoc)} icon="Code" />
         <Stat label="Horas estimadas" value={fmtHoras(total)} icon="Clock" accent />
         <Stat
           label="Média por arquivo"
@@ -119,9 +121,10 @@ export default function OrphansPage() {
         />
       ) : (
         <Card className="overflow-hidden p-0">
-          <div className="grid grid-cols-[2.2fr_1fr_0.9fr_0.9fr_0.7fr] border-b border-line px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+          <div className="grid grid-cols-[2.2fr_1fr_0.7fr_0.9fr_0.9fr_0.7fr] border-b border-line px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
             <span>Arquivo</span>
             <span>Categoria</span>
+            <span className="text-right">Linhas</span>
             <span className="text-right">Horas</span>
             <span className="text-right">Com Migrate</span>
             <span className="text-right">Prioridade</span>
@@ -134,13 +137,16 @@ export default function OrphansPage() {
               return (
                 <div
                   key={o.file_name}
-                  className="grid grid-cols-[2.2fr_1fr_0.9fr_0.9fr_0.7fr] items-center border-b border-line/50 px-4 py-2.5 text-sm hover:bg-black/[0.03]"
+                  className="grid grid-cols-[2.2fr_1fr_0.7fr_0.9fr_0.9fr_0.7fr] items-center border-b border-line/50 px-4 py-2.5 text-sm hover:bg-black/[0.03]"
                 >
                   <span className="truncate text-ink-muted" title={o.file_name}>
                     {o.file_name}
                   </span>
                   <span>
                     <Badge tone={categoriaTone(o.categoria)}>{o.categoria}</Badge>
+                  </span>
+                  <span className="num text-right text-ink-muted">
+                    {fmtInt(o.loc_total)}
                   </span>
                   <span className="num text-right font-semibold text-ink">
                     {fmtHoras(o.horas_estimadas, 1)}

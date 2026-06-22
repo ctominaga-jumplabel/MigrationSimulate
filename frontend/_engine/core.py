@@ -142,6 +142,7 @@ def egp_table(rollup_df: pd.DataFrame, params: dict, cenario: str) -> pd.DataFra
     is_sem_dup = cenario == "sem_dup"
     horas_col = "soma_horas_sas_sem_dup" if is_sem_dup else "soma_horas_sas"
     n_col = "n_sas_sem_dup" if is_sem_dup else "n_sas"
+    loc_col = "soma_loc_sem_dup" if is_sem_dup else "soma_loc"
 
     # Sem-dup oficial: só os EGPs canônicos de cada família carregam Job/horas.
     src = canonical_rollup(rollup_df) if is_sem_dup else rollup_df
@@ -150,6 +151,8 @@ def egp_table(rollup_df: pd.DataFrame, params: dict, cenario: str) -> pd.DataFra
         {
             "egp_name": src["egp_name"].to_numpy(),
             "n_sas": src[n_col].astype(int).to_numpy(),
+            # Linhas de código (loc_total) somadas de todos os .sas do EGP.
+            "loc_total": src[loc_col].astype(int).to_numpy(),
             "horas_sas": src[horas_col].astype(float).to_numpy(),
             "categoria_predominante": src["categoria_predominante"].to_numpy(),
         }
@@ -161,6 +164,7 @@ def egp_table(rollup_df: pd.DataFrame, params: dict, cenario: str) -> pd.DataFra
         [
             "egp_name",
             "n_sas",
+            "loc_total",
             "horas_sas",
             "horas_job",
             "horas_total",
@@ -173,8 +177,9 @@ def sas_children(dataset_df: pd.DataFrame, egp_name: str) -> pd.DataFrame:
     """Os .sas filhos de um EGP, ordenados por horas desc. Pura."""
     child = dataset_df[dataset_df["egp_name"] == egp_name]
     out = child[
-        ["file_name", "categoria", "horas_estimadas", "is_likely_duplicate"]
+        ["file_name", "categoria", "horas_estimadas", "is_likely_duplicate", "loc_total"]
     ].copy()
+    out["loc_total"] = out["loc_total"].astype(int)
     out = out.sort_values("horas_estimadas", ascending=False).reset_index(drop=True)
     return out
 
@@ -182,13 +187,15 @@ def sas_children(dataset_df: pd.DataFrame, egp_name: str) -> pd.DataFrame:
 def orphan_table(dataset_df: pd.DataFrame, cenario: str) -> pd.DataFrame:
     """Uma linha por `.sas` órfão. "bruto" = todos; "sem_dup" = não-duplicatas.
 
-    Colunas file_name, categoria, horas_estimadas, ordenadas por horas desc. Pura.
+    Colunas file_name, categoria, horas_estimadas, loc_total, ordenadas por horas
+    desc. Pura.
     """
     orphans = dataset_df[dataset_df["is_orphan"] == True]  # noqa: E712
     if cenario == "sem_dup":
         orphans = orphans[~orphans["is_likely_duplicate"]]
-    out = orphans[["file_name", "categoria", "horas_estimadas"]].copy()
+    out = orphans[["file_name", "categoria", "horas_estimadas", "loc_total"]].copy()
     out["horas_estimadas"] = out["horas_estimadas"].astype(float)
+    out["loc_total"] = out["loc_total"].astype(int)
     out = out.sort_values("horas_estimadas", ascending=False).reset_index(drop=True)
     return out
 

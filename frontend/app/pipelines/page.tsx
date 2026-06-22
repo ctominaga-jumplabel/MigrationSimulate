@@ -209,7 +209,9 @@ function EgpCard({
           <p className="mt-1.5 truncate text-sm font-semibold text-ink" title={egp.egp_name}>
             {egp.egp_name}
           </p>
-          <p className="text-xs text-ink-muted">{fmtInt(egp.n_sas)} arquivos .sas</p>
+          <p className="text-xs text-ink-muted">
+            {fmtInt(egp.n_sas)} arquivos .sas · {fmtInt(egp.loc_total)} linhas
+          </p>
         </div>
         <div className="text-right">
           <p className="num text-lg font-bold text-ink">{fmtHoras(egp.horas_total)}</p>
@@ -298,7 +300,10 @@ function ChildrenList({ egp }: { egp: string }) {
                   {c.file_name}
                 </span>
               </span>
-              <span className="num shrink-0 text-ink">{fmtHoras(c.horas_estimadas, 1)}</span>
+              <span className="flex shrink-0 items-center gap-3">
+                <span className="num text-ink-faint">{fmtInt(c.loc_total)} ln</span>
+                <span className="num text-ink">{fmtHoras(c.horas_estimadas, 1)}</span>
+              </span>
             </div>
           ))
         )}

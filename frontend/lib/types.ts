@@ -142,6 +142,7 @@ export interface ComparisonResponse {
 export interface EgpRow {
   egp_name: string;
   n_sas: number;
+  loc_total: number; // linhas de código somadas de todos os .sas do EGP
   horas_sas: number;
   horas_job: number;
   horas_total: number;
@@ -162,12 +163,14 @@ export interface SasChild {
   categoria: string;
   horas_estimadas: number;
   is_likely_duplicate: boolean;
+  loc_total: number; // linhas de código do arquivo
 }
 
 export interface OrphanRow {
   file_name: string;
   categoria: string;
   horas_estimadas: number;
+  loc_total: number; // linhas de código do arquivo
 }
 
 export interface OrphansResponse {

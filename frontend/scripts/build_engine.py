@@ -34,6 +34,7 @@ DATASET_COLS = [
     "file_name",
     "categoria",
     "horas_estimadas",
+    "loc_total",
     "is_likely_duplicate",
     "egp_name",
     "is_orphan",

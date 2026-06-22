@@ -17,7 +17,7 @@ const RULES = [
   {
     icon: "Profile2User",
     title: "Mais consultores reduzem a duração, não o esforço",
-    body: "O total de horas-homem é fixo. Adicionar consultores divide o trabalho — o projeto termina antes, mas o esforço acumulado é o mesmo.",
+    body: "O total de horas trabalhadas é fixo. Adicionar consultores divide o trabalho — o projeto termina antes, mas o esforço acumulado é o mesmo.",
   },
   {
     icon: "Flash",

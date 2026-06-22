@@ -101,10 +101,10 @@ export interface MigrateResponse {
 }
 
 // --- Comparativo por complexidade: cliente (manual) × consultores (Migrate). --
-// Duração do MESMO esforço (horas-homem, fixo) sob equipes de tamanhos diferentes.
+// Duração do MESMO esforço (horas trabalhadas, fixo) sob equipes de tamanhos diferentes.
 
 export interface DuracaoBreakdown {
-  esforco_total: number; // horas-homem (independe do tamanho da equipe)
+  esforco_total: number; // horas trabalhadas (independe do tamanho da equipe)
   n_pessoas: number;
   duracao_horas: number; // duração de calendário em horas úteis
   duracao_dias: number; // dias úteis
@@ -125,7 +125,7 @@ export interface ComplexidadeRow {
 export interface ComparisonScenario {
   manual: DuracaoBreakdown; // cliente, n_colaboradores pessoas
   migrate: DuracaoBreakdown; // consultores, n_consultores pessoas, com Migrate
-  economia_horas: number; // esforço manual − migrate (horas-homem)
+  economia_horas: number; // esforço manual − migrate (horas trabalhadas)
   ganho_pct: number; // economia / esforço manual × 100
   n_colaboradores: number;
   n_consultores: number;

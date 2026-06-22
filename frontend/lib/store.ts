@@ -33,10 +33,10 @@ interface SimState {
 // de o /api/catalog carregar; a tela de calibração permite sobrescrever).
 export const MIGRATE_GAIN_DEFAULTS: Record<string, number> = {
   Trivial: 92,
-  Simples: 85,
-  Médio: 65,
-  Complexo: 45,
-  "Muito Complexo": 30,
+  Simples: 90,
+  Médio: 85,
+  Complexo: 80,
+  "Muito Complexo": 80,
 };
 
 const DEFAULTS = {

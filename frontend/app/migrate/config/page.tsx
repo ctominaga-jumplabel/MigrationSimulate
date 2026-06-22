@@ -134,7 +134,7 @@ export default function MigrateConfigPage() {
                 <ImpactStat
                   label="Economia"
                   value={active ? "−" + fmtHoras(active.economia_horas) : "—"}
-                  sub="horas-homem"
+                  sub="horas trabalhadas"
                 />
                 <ImpactStat
                   label="Duração"

@@ -34,10 +34,10 @@ CATEGORIA_ORDER = ["Trivial", "Simples", "Médio", "Complexo", "Muito Complexo"]
 # calibração). Consumido por `compute_migrate`; a API expõe estes defaults.
 MIGRATE_GAIN_DEFAULT = {
     "Trivial": 92.0,
-    "Simples": 85.0,
-    "Médio": 65.0,
-    "Complexo": 45.0,
-    "Muito Complexo": 30.0,
+    "Simples": 90.0,
+    "Médio": 85.0,
+    "Complexo": 80.0,
+    "Muito Complexo": 80.0,
 }
 
 DATASET_PATH = "data/dataset.parquet"
@@ -725,7 +725,7 @@ def compute_migrate(
 # COMPARATIVO POR COMPLEXIDADE (tela "Comparativo"): migração MANUAL pelo cliente
 # (nº de COLABORADORES do cliente) × migração com a ferramenta MIGRATE conduzida
 # pelos CONSULTORES. Sem cálculo novo de esforço — reaproveita compute_migrate; a
-# única conta adicional é traduzir o MESMO esforço (horas-homem, fixo) em DURAÇÃO
+# única conta adicional é traduzir o MESMO esforço (horas trabalhadas, fixo) em DURAÇÃO
 # de calendário sob equipes de tamanhos diferentes (cliente × consultores).
 # ---------------------------------------------------------------------------
 def _duracao_breakdown(
@@ -734,9 +734,9 @@ def _duracao_breakdown(
     horas_dia: float,
     dias_uteis_mes: float = DIAS_UTEIS_POR_MES,
 ) -> dict:
-    """Traduz um esforço total (horas-homem) em duração, dado o tamanho da equipe.
+    """Traduz um esforço total (horas trabalhadas) em duração, dado o tamanho da equipe.
 
-    O esforço (horas-homem) é FIXO; o tamanho da equipe só muda a DURAÇÃO. Devolve
+    O esforço (horas trabalhadas) é FIXO; o tamanho da equipe só muda a DURAÇÃO. Devolve
     a mesma duração expressa em horas (úteis de calendário), DIAS ÚTEIS, meses e
     anos — coerente com `_effort_metrics` (dias úteis = esforço ÷ capacidade/dia).
     Meses e anos consideram só DIAS ÚTEIS: 1 mês = `dias_uteis_mes` dias úteis
@@ -747,7 +747,7 @@ def _duracao_breakdown(
     finita = dias != float("inf")
     dum = float(dias_uteis_mes) if dias_uteis_mes else DIAS_UTEIS_POR_MES
     return {
-        "esforco_total": float(esforco_total),  # horas-homem (independe da equipe)
+        "esforco_total": float(esforco_total),  # horas trabalhadas (independe da equipe)
         "n_pessoas": int(n_pessoas),
         # Duração de calendário em horas úteis = dias úteis × h/dia (= esforço ÷ pessoas).
         "duracao_horas": float(dias * horas_dia) if finita else float("inf"),

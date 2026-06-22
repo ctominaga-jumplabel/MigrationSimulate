@@ -40,7 +40,7 @@ export default function ComparisonPage() {
       <SectionHeader
         eyebrow="Comparativo"
         title="Cliente × Consultores"
-        description="A mesma base SAS migrada de dois jeitos: manualmente pela equipe do CLIENTE versus com a ferramenta Migrate conduzida pelos CONSULTORES. O esforço (horas-homem) vem do motor; a duração traduz esse esforço para o tamanho de cada equipe. Compare por horas, dias, meses ou anos — com ou sem duplicados."
+        description="A mesma base SAS migrada de dois jeitos: manualmente pela equipe do CLIENTE versus com a ferramenta Migrate conduzida pelos CONSULTORES. O esforço (horas trabalhadas) vem do motor; a duração traduz esse esforço para o tamanho de cada equipe. Compare por horas, dias, meses ou anos — com ou sem duplicados."
         actions={
           <SegmentedControl
             size="sm"
@@ -247,7 +247,7 @@ function ProtagonistCard({
             <span className="num font-semibold text-ink">
               {fmtHoras(breakdown.esforco_total)}
             </span>{" "}
-            (horas-homem) — fixo, independe do tamanho da equipe.
+            (horas trabalhadas) — fixo, independe do tamanho da equipe.
           </div>
         </div>
       </Card>
@@ -279,7 +279,7 @@ function VeredictoStrip({
       <StripCell
         label="Economia de esforço"
         value={`−${fmtHoras(active.economia_horas)}`}
-        sub={`${fmtPct(active.ganho_pct, 1)} menos horas-homem com Migrate`}
+        sub={`${fmtPct(active.ganho_pct, 1)} menos horas trabalhadas com Migrate`}
         tone="success"
       />
       <StripCell

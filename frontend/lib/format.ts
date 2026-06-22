@@ -71,3 +71,41 @@ export function fmtDuracao(v: number | null | undefined, u: DuracaoUnidade): str
   const num = cfg.dec === 0 ? fmtInt(v) : fmtDec(v, cfg.dec);
   return `${num} ${cfg.sufixo}`;
 }
+
+/**
+ * Converte ESFORÇO (horas trabalhadas) para a unidade escolhida.
+ * dias = horas ÷ horasDia · meses = dias ÷ diasUteisMes · anos = meses ÷ 12.
+ */
+export function converteHoras(
+  horas: number,
+  u: DuracaoUnidade,
+  horasDia: number,
+  diasUteisMes: number
+): number {
+  const hd = Math.max(0.1, horasDia || 7.5);
+  const dm = Math.max(1, diasUteisMes || 21);
+  switch (u) {
+    case "horas":
+      return horas;
+    case "dias":
+      return horas / hd;
+    case "meses":
+      return horas / hd / dm;
+    case "anos":
+      return horas / hd / (dm * 12);
+  }
+}
+
+/** Formata ESFORÇO (horas) na unidade escolhida, com o sufixo correspondente. */
+export function fmtEsforco(
+  horas: number | null | undefined,
+  u: DuracaoUnidade,
+  horasDia: number,
+  diasUteisMes: number
+): string {
+  if (horas === null || horas === undefined || !Number.isFinite(horas)) return "—";
+  const cfg = DURACAO_UNIDADES.find((x) => x.value === u)!;
+  const conv = converteHoras(horas, u, horasDia, diasUteisMes);
+  const num = cfg.dec === 0 ? fmtInt(conv) : fmtDec(conv, cfg.dec);
+  return `${num} ${cfg.sufixo}`;
+}
